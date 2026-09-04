@@ -25,12 +25,36 @@ hotkey — the command ID is `calendar-palette:open-calendar`).
 Clicking a day works too. A dot under a day means a note already exists for it;
 picking a day without one asks before creating it.
 
+### Vim and Emacs keys
+
+The **Key bindings** setting layers a second key set on top of the table above.
+The arrows, `Home`/`T`, `Enter` and `Escape` keep working in every mode.
+
+| Vim                          | Emacs                        | Action                |
+| ---------------------------- | ---------------------------- | --------------------- |
+| `h` / `l`                    | `Ctrl` + `b` / `f`           | Previous / next day   |
+| `k` / `j`                    | `Ctrl` + `p` / `n`           | Previous / next week  |
+| `Ctrl` + `b` / `f`           | `Alt` + `v` / `Ctrl` + `v`   | Previous / next month |
+| `Ctrl` + `Shift` + `b` / `f` | `Alt`/`Ctrl` + `Shift` + `v` | Previous / next year  |
+|                              | `.`                          | Jump back to today    |
+
+Both modes use `Ctrl` literally, never `Cmd`, so macOS keeps `Cmd` free for
+Obsidian's own hotkeys.
+
 ## Settings
 
-| Setting                        | Default       | Description                                           |
-| ------------------------------ | ------------- | ----------------------------------------------------- |
-| First day of the week          | Follow locale | Sunday, Monday, or whatever your Obsidian locale says |
-| Confirm before creating a note | On            | Turn off to create missing daily notes without asking |
+| Setting                                 | Default       | Description                                                         |
+| --------------------------------------- | ------------- | ------------------------------------------------------------------- |
+| First day of the week                   | Follow locale | Sunday, Monday, or whatever your Obsidian locale says               |
+| Confirm before creating a note          | On            | Turn off to create missing daily notes without asking               |
+| Key bindings                            | Arrows only   | Add the Vim or Emacs key set on top of the arrows                   |
+| Modal title                             | Month, left   | Where the month is written, and what the modal's title says         |
+| Month transition                        | Slide         | Full-height directional slide, a shorter throw, or no motion at all |
+| Higher contrast weekday headers         | On            | Draws them at `--text-muted`, which clears the WCAG AA threshold    |
+| Dim the note dot on adjacent-month days | On            | Matches the dot to the greyed-out date it belongs to                |
+
+Month transitions are skipped entirely when the system asks for reduced motion,
+whatever the setting says.
 
 Everything else — the folder, the filename format, and the template — comes from
 the core **Daily notes** plugin, so there is nothing to configure twice. Slashes in
@@ -73,7 +97,8 @@ src/
   dailyNote/notePath.ts      # pure path resolution
   dailyNote/template.ts      # pure placeholder expansion
   dailyNote/openDailyNote.ts # find / create / open
-  ui/CalendarModal.ts        # the grid and its key bindings
+  ui/CalendarModal.ts        # the grid, its headings, and its paging
+  ui/keymap.ts               # pure keystroke -> action matching (arrows, vim, emacs)
   ui/ConfirmModal.ts         # create-note confirmation
 ```
 
