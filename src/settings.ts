@@ -5,15 +5,20 @@ import type { KeymapMode } from "./ui/keymap";
 /** Which column the calendar grid starts on. */
 export type WeekStart = "locale" | "sunday" | "monday";
 
+/** Where the month is written, and what the modal's own title says. */
+export type TitleMode = "title-left" | "title-center" | "month-only" | "calendar";
+
 export interface CalendarPaletteSettings {
 	weekStart: WeekStart;
 	confirmBeforeCreate: boolean;
+	titleMode: TitleMode;
 	keymap: KeymapMode;
 }
 
 export const DEFAULT_SETTINGS: CalendarPaletteSettings = {
 	weekStart: "locale",
 	confirmBeforeCreate: true,
+	titleMode: "title-left",
 	keymap: "default",
 };
 
@@ -74,6 +79,24 @@ export class CalendarPaletteSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.keymap)
 					.onChange(async (value) => {
 						this.plugin.settings.keymap = value as KeymapMode;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl).setName("Appearance").setHeading();
+
+		new Setting(containerEl)
+			.setName("Modal title")
+			.setDesc("Where the month is written, and what the modal's title says.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("title-left", "Month as title, left")
+					.addOption("title-center", "Month as title, centred")
+					.addOption("month-only", "No title, centred month line")
+					.addOption("calendar", "Fixed title plus a month line")
+					.setValue(this.plugin.settings.titleMode)
+					.onChange(async (value) => {
+						this.plugin.settings.titleMode = value as TitleMode;
 						await this.plugin.saveSettings();
 					}),
 			);

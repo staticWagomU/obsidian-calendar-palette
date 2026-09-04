@@ -8,7 +8,7 @@ import {
 	toISODate,
 } from "../calendar/dateMath";
 import { buildMonthGrid, weekdayOrder } from "../calendar/monthGrid";
-import type { WeekStart } from "../settings";
+import type { TitleMode, WeekStart } from "../settings";
 import {
 	type CalendarAction,
 	bindingsFor,
@@ -19,6 +19,7 @@ import {
 
 export interface CalendarModalOptions {
 	weekStart: WeekStart;
+	titleMode: TitleMode;
 	keymap: KeymapMode;
 	/** Whether a daily note already exists for a given day, used to mark cells. */
 	hasNote: (date: Date) => boolean;
@@ -43,6 +44,7 @@ export class CalendarModal extends Modal {
 	private readonly today = startOfDay(new Date());
 	private readonly weekStart: number;
 
+	private monthEl!: HTMLElement;
 	private gridEl!: HTMLElement;
 	private weekdaysEl!: HTMLElement;
 	private weeksEl!: HTMLElement;
@@ -68,17 +70,17 @@ export class CalendarModal extends Modal {
 
 	override onClose(): void {
 		this.titleEl.empty();
+		this.titleEl.hidden = false;
 		this.contentEl.empty();
 		this.cellEls.clear();
 	}
 
 	private buildChrome(): void {
-		// The month is the heading, so it lives in .modal-title rather than on a
-		// line of its own. Announcing from there keeps paging audible without a
-		// second element saying the same thing.
-		this.titleEl.setAttribute("aria-live", "polite");
-
 		const paletteEl = this.contentEl.createDiv({ cls: "calendar-palette" });
+
+		// Always built, even when the modal title carries the month: the grid
+		// names itself from this line, so it has to stay current while hidden.
+		this.monthEl = paletteEl.createDiv({ cls: "calendar-palette-month" });
 
 		this.gridEl = paletteEl.createDiv({
 			cls: "calendar-palette-grid",
@@ -160,13 +162,38 @@ export class CalendarModal extends Modal {
 			this.renderedMonth = month;
 			this.swapIn(this.weeksEl, this.buildPane(), direction);
 		}
-		this.setLabel(this.titleEl, moment(this.focused).format("MMMM YYYY"), direction);
+		this.renderHeadings(direction);
 		this.highlightFocus();
 
 		// Only on a forced render — the open. That is the time the columns can
 		// have been built, and measuring forces a layout, which has no business
 		// running on every arrow key.
 		if (force) this.alignHeadingToColumns();
+	}
+
+	/**
+	 * The month appears exactly once. When the modal title carries it, the
+	 * separate month line is redundant and goes away; the live region moves with
+	 * it so the month is still announced on paging.
+	 */
+	private renderHeadings(direction: number): void {
+		const mode = this.options.titleMode;
+		const titleCarriesMonth = mode === "title-left" || mode === "title-center";
+		const monthText = moment(this.focused).format("MMMM YYYY");
+
+		// Hidden state first: swapIn skips the animation on a hidden host, so
+		// only the heading actually on screen moves.
+		this.titleEl.hidden = mode === "month-only";
+		this.monthEl.hidden = titleCarriesMonth;
+
+		this.setLabel(this.titleEl, titleCarriesMonth ? monthText : "Calendar", direction);
+		this.titleEl.toggleClass("x-title-center", mode === "title-center");
+		this.setLabel(this.monthEl, monthText, direction);
+
+		this.titleEl.toggleAttribute("aria-live", titleCarriesMonth);
+		this.monthEl.toggleAttribute("aria-live", !titleCarriesMonth);
+		// The grid names itself from the month, whichever line is showing it.
+		this.gridEl.setAttribute("aria-label", monthText);
 	}
 
 	/**
@@ -210,14 +237,13 @@ export class CalendarModal extends Modal {
 	/**
 	 * Sets a one-line heading, sliding sideways if the text actually changes.
 	 * The guard matters: this runs on every arrow key, and a day moving within
-	 * its month must not make the heading twitch.
+	 * its month must not make the heading twitch. It is also what keeps a
+	 * heading reading a fixed "Calendar" from animating at all.
 	 */
 	private setLabel(host: HTMLElement, text: string, direction: number): void {
 		const current = host.querySelector(":scope > .is-current");
 		if (current?.textContent === text) return;
 
-		// The grid names itself from the heading, so they change together.
-		this.gridEl.setAttribute("aria-label", text);
 		this.swapIn(host, createSpan({ cls: "calendar-palette-label", text }), direction);
 	}
 
@@ -242,8 +268,10 @@ export class CalendarModal extends Modal {
 		incoming.addClass("is-current");
 
 		// Without an animation there is no animationend, so the outgoing node
-		// would never be cleaned up — replace outright instead of sliding.
-		if (direction === 0 || !outgoing || !prefersMotion()) {
+		// would never be cleaned up — replace outright instead of sliding. A
+		// hidden host runs no animation either, so it takes the same path.
+		const animated = direction !== 0 && outgoing !== null && !host.hidden && prefersMotion();
+		if (!animated) {
 			host.replaceChildren(incoming);
 			return;
 		}

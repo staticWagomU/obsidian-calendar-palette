@@ -38,14 +38,24 @@
 	padding-right: var(--size-4-6);
 }
 
+.calendar-palette-month {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	text-align: center;
+	margin-bottom: var(--size-4-3);
+}
+
 /* ---- The month label ---------------------------------------------
    The month slides sideways while the grid slides vertically, so the
    heading and the days stay legible as two separate planes instead of
    one block of text moving past another. What ties them together is
-   the shared duration and easing, not a shared axis. */
+   the shared duration and easing, not a shared axis.
+
+   Both hosts get the same treatment: whichever of the two carries the
+   month, it animates, and the one showing a fixed "Calendar" never
+   changes text so it never animates. */
+.calendar-palette-month,
 .calendar-palette-modal .modal-title {
-	/* Never absorbs the shortfall when the window is too short; the grid does. */
-	flex: none;
 	position: relative;
 	/* Clip sideways only. A negative vertical inset keeps descenders and
 	   any focus ring intact, which plain overflow: hidden would shave. */
@@ -58,6 +68,26 @@
 	   is set by how wide the weekday abbreviation is ("Mon" against
 	   "月"), which no stylesheet can know in advance. */
 	padding-inline: var(--cp-column-inset, 0px);
+}
+
+.calendar-palette-modal .modal-title {
+	/* Never absorbs the shortfall when the window is too short; the grid does. */
+	flex: none;
+}
+
+/* Obsidian left-aligns .modal-title. Centring it is a setting, because
+   the month reads as a title one way and as a caption the other. */
+.calendar-palette-modal .modal-title.x-title-center {
+	text-align: center;
+}
+
+/* Whichever heading is not carrying the month is hidden rather than removed,
+   so it stays available the moment the setting changes. `display: none` is
+   restated here because [hidden] is a user-agent rule, and any `display` a
+   theme puts on .modal-title outranks it. */
+.calendar-palette-modal .modal-title[hidden],
+.calendar-palette-month[hidden] {
+	display: none;
 }
 
 /* The close button joins the heading line instead of sitting in the
