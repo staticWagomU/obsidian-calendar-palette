@@ -1,4 +1,5 @@
-import { App, moment, normalizePath, Notice, TFile } from "obsidian";
+import { App, normalizePath, Notice, TFile } from "obsidian";
+import { formatMoment } from "../obsidianMoment";
 import type { DailyNoteEnvironment, VaultEntry } from "./environment";
 
 /**
@@ -10,7 +11,7 @@ import type { DailyNoteEnvironment, VaultEntry } from "./environment";
  */
 export function obsidianEnvironment(app: App): DailyNoteEnvironment<TFile> {
 	return {
-		formatDate: (date, pattern) => moment(date).format(pattern),
+		formatDate: formatMoment,
 		now: () => new Date(),
 		normalizePath,
 

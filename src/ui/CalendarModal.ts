@@ -1,7 +1,8 @@
-import { App, Modal, Platform, moment } from "obsidian";
+import { App, Modal, Platform } from "obsidian";
 import { isSameDay, startOfDay, toISODate } from "../calendar/dateMath";
 import { buildMonthGrid, weekdayOrder } from "../calendar/monthGrid";
 import { monthNumber, pageDirection, resolveWeekStart, step } from "../calendar/navigation";
+import { formatMoment, localeFirstDayOfWeek, weekdayShortLabels } from "../obsidianMoment";
 import type { MonthTransition, TitleMode, WeekStart } from "../settings";
 import {
 	type CalendarAction,
@@ -50,7 +51,7 @@ export class CalendarModal extends Modal {
 	) {
 		super(app);
 		this.focused = startOfDay(initialDate);
-		this.weekStart = resolveWeekStart(options.weekStart, moment.localeData().firstDayOfWeek());
+		this.weekStart = resolveWeekStart(options.weekStart, localeFirstDayOfWeek());
 	}
 
 	override onOpen(): void {
@@ -88,7 +89,7 @@ export class CalendarModal extends Modal {
 		});
 		// weekdaysShort() is Sunday-first regardless of locale, so the index
 		// lines up with the day numbers weekdayOrder() returns.
-		const labels = moment.weekdaysShort();
+		const labels = weekdayShortLabels();
 		for (const weekday of weekdayOrder(this.weekStart)) {
 			this.weekdaysEl.createDiv({
 				text: labels[weekday] ?? "",
@@ -175,7 +176,7 @@ export class CalendarModal extends Modal {
 	private renderHeadings(direction: number): void {
 		const mode = this.options.titleMode;
 		const titleCarriesMonth = mode === "title-left" || mode === "title-center";
-		const monthText = moment(this.focused).format("MMMM YYYY");
+		const monthText = formatMoment(this.focused, "MMMM YYYY");
 
 		// Hidden state first: swapIn skips the animation on a hidden host, so
 		// only the heading actually on screen moves.
@@ -209,7 +210,7 @@ export class CalendarModal extends Modal {
 					text: String(cell.date.getDate()),
 					attr: {
 						role: "gridcell",
-						"aria-label": moment(cell.date).format("LL"),
+						"aria-label": formatMoment(cell.date, "LL"),
 					},
 				});
 				cellEl.toggleClass("is-outside-month", !cell.inCurrentMonth);
