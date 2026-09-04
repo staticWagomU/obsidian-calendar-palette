@@ -122,6 +122,10 @@ export class CalendarModal extends Modal {
 			if (action === null) return;
 			evt.preventDefault();
 			this.run(action);
+			// 戻り値を揃えられない。Obsidian の Scope はこの 2 つを区別していて、
+			// undefined は「未処理、他のハンドラへ渡す」、false は「処理済み、
+			// ここで止める」を意味する。揃えると上の Escape が効かなくなる。
+			// oxlint-disable-next-line typescript/consistent-return
 			return false;
 		});
 	}

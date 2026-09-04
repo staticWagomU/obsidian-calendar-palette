@@ -68,6 +68,15 @@ export default defineConfig(({ mode }) => {
 		// 読まれない（Oxlint が探すのは `.oxlintrc.json`）ため、Vite+ は
 		// この lint ブロックを唯一の置き場所として案内している。
 		lint: {
+			options: {
+				// 型情報を要するルール(no-floating-promises 等)を有効にする。
+				// 実体は Vite+ 同梱の oxlint-tsgolint、つまり TypeScript 7 の
+				// ネイティブ実装で、devDependencies の typescript とは独立に動く。
+				// 対になる typeCheck は入れない: tsgo は esModuleInterop が常時 ON
+				// で、obsidian.d.ts の `moment` が呼び出せず TS2349 になるため。
+				// 詳細は CLAUDE.md の TypeScript 7 の項を参照。
+				typeAware: true,
+			},
 			// plugins は既定を置き換えてしまうので指定しない。
 			// 既定の unicorn / typescript / oxc をそのまま使う。
 			categories: {
@@ -94,6 +103,13 @@ export default defineConfig(({ mode }) => {
 					// プラグイン本体に混ざるログとは事情が違う。
 					files: ["vite.config.ts"],
 					rules: { "no-console": "off" },
+				},
+				{
+					// テストダブルは意図して部分実装なので、`as unknown as T` で
+					// 本物の型を名乗らせるのがこのリポジトリの定石。ここで
+					// この規則を守らせても、実装のない残りを埋める作業が増えるだけ。
+					files: ["src/**/*.test.ts"],
+					rules: { "typescript/no-unsafe-type-assertion": "off" },
 				},
 			],
 			// main.js と coverage/ は .gitignore 済みで Oxlint が自動で外す。
