@@ -146,8 +146,8 @@ export class CalendarModal extends Modal {
 	}
 
 	/**
-	 * @param force - A settings change or the initial open rather than
-	 * navigation, so the grid is rebuilt but lands without moving.
+	 * @param force - The initial open rather than navigation, so the grid is
+	 * rebuilt but lands without moving.
 	 */
 	private render(force = false): void {
 		const month = monthNumber(this.focused);
@@ -163,9 +163,9 @@ export class CalendarModal extends Modal {
 		this.setLabel(this.titleEl, moment(this.focused).format("MMMM YYYY"), direction);
 		this.highlightFocus();
 
-		// Only on a forced render — open, or a settings change. Those are the
-		// times the columns can have been rebuilt, and measuring forces a
-		// layout, which has no business running on every arrow key.
+		// Only on a forced render — the open. That is the time the columns can
+		// have been built, and measuring forces a layout, which has no business
+		// running on every arrow key.
 		if (force) this.alignHeadingToColumns();
 	}
 
