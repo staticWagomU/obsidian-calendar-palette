@@ -1,13 +1,7 @@
 import { App, Modal, Platform, moment } from "obsidian";
-import {
-	addDays,
-	addMonths,
-	addYears,
-	isSameDay,
-	startOfDay,
-	toISODate,
-} from "../calendar/dateMath";
+import { isSameDay, startOfDay, toISODate } from "../calendar/dateMath";
 import { buildMonthGrid, weekdayOrder } from "../calendar/monthGrid";
+import { monthNumber, pageDirection, resolveWeekStart, step } from "../calendar/navigation";
 import type { MonthTransition, TitleMode, WeekStart } from "../settings";
 import {
 	type CalendarAction,
@@ -28,11 +22,6 @@ export interface CalendarModalOptions {
 	hasNote: (date: Date) => boolean;
 	/** Invoked after the modal closes, with the day the user confirmed. */
 	onPick: (date: Date, newTab: boolean) => void;
-}
-
-/** Months on one continuous axis, so the sign of a difference is a direction. */
-function monthNumber(date: Date): number {
-	return date.getFullYear() * 12 + date.getMonth();
 }
 
 /**
@@ -61,7 +50,7 @@ export class CalendarModal extends Modal {
 	) {
 		super(app);
 		this.focused = startOfDay(initialDate);
-		this.weekStart = resolveWeekStart(options.weekStart);
+		this.weekStart = resolveWeekStart(options.weekStart, moment.localeData().firstDayOfWeek());
 	}
 
 	override onOpen(): void {
@@ -159,10 +148,7 @@ export class CalendarModal extends Modal {
 	 */
 	private render(force = false): void {
 		const month = monthNumber(this.focused);
-		const direction =
-			force || this.renderedMonth === null || month === this.renderedMonth
-				? 0
-				: Math.sign(month - this.renderedMonth);
+		const direction = pageDirection(this.renderedMonth, month, force);
 
 		if (force || month !== this.renderedMonth) {
 			this.renderedMonth = month;
@@ -346,42 +332,6 @@ export class CalendarModal extends Modal {
 		// of the calendar, and so the opened note gets the focus.
 		this.close();
 		this.options.onPick(date, newTab);
-	}
-}
-
-/** Where a movement action lands, given where the focus is now. */
-function step(action: CalendarAction, from: Date, today: Date): Date {
-	switch (action) {
-		case "prev-day":
-			return addDays(from, -1);
-		case "next-day":
-			return addDays(from, 1);
-		case "prev-week":
-			return addDays(from, -7);
-		case "next-week":
-			return addDays(from, 7);
-		case "prev-month":
-			return addMonths(from, -1);
-		case "next-month":
-			return addMonths(from, 1);
-		case "prev-year":
-			return addYears(from, -1);
-		case "next-year":
-			return addYears(from, 1);
-		default:
-			return today;
-	}
-}
-
-/** Maps the setting onto a moment weekday index, 0 = Sunday. */
-function resolveWeekStart(setting: WeekStart): number {
-	switch (setting) {
-		case "sunday":
-			return 0;
-		case "monday":
-			return 1;
-		default:
-			return moment.localeData().firstDayOfWeek();
 	}
 }
 
