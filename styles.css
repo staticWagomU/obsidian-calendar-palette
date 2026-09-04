@@ -1,8 +1,82 @@
-/*
+/* Calendar palette — keyboard-driven month grid.
+   Every colour comes from a theme variable so the modal follows the active theme. */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.calendar-palette-modal {
+	width: auto;
+	max-width: 22rem;
+}
 
-If your plugin does not need CSS, delete this file.
+.calendar-palette-month {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	text-align: center;
+	margin-bottom: var(--size-4-3);
+}
 
-*/
+.calendar-palette-grid {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	user-select: none;
+}
+
+.calendar-palette-grid th {
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-normal);
+	color: var(--text-faint);
+	padding-bottom: var(--size-4-1);
+	text-align: center;
+}
+
+.calendar-palette-day {
+	position: relative;
+	text-align: center;
+	padding: var(--size-4-2) 0;
+	border-radius: var(--radius-s);
+	cursor: pointer;
+	color: var(--text-normal);
+}
+
+.calendar-palette-day:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.calendar-palette-day.is-outside-month {
+	color: var(--text-faint);
+}
+
+.calendar-palette-day.is-today {
+	font-weight: var(--font-bold);
+	color: var(--text-accent);
+}
+
+.calendar-palette-day.is-focused {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+/* Dot marking days that already have a daily note. Drawn as a pseudo-element so
+   the cell's text content stays a single text node. */
+.calendar-palette-day.has-note::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	bottom: var(--size-2-1);
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	transform: translateX(-50%);
+	background-color: var(--text-muted);
+}
+
+.calendar-palette-day.is-focused.has-note::after {
+	background-color: var(--text-on-accent);
+}
+
+.calendar-palette-hint {
+	margin-top: var(--size-4-3);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	text-align: center;
+	line-height: var(--line-height-tight);
+}
