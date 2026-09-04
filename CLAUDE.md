@@ -159,14 +159,14 @@ Two things about that block are easy to get wrong:
 **`options.typeAware` is on.** It enables the rules that need type information
 (`no-floating-promises`, `no-unsafe-type-assertion`, `consistent-return`, …). The engine
 is `oxlint-tsgolint`, bundled by Vite+ — that is the **TypeScript 7** native
-implementation, and it runs independently of the `typescript` in `devDependencies`. Full
-runs take well under a second, so `lefthook.yml` pays nothing for it.
+implementation, and it ships its own copy, so it does not resolve either TypeScript in
+`devDependencies`. Full runs take well under a second, so `lefthook.yml` pays nothing for it.
 
-**`options.typeCheck` is on too**, which adds tsgo's own compiler diagnostics. The effect
-is that every `pnpm lint` type-checks the project twice — once as `tsc` 5.9 sees it, once
-as TypeScript 7 does — so a construct that only breaks under 7 is caught the day it is
-written rather than at upgrade time. Neither flag is measurable in the runtime: a full
-`vp lint` stays around 0.5s.
+**`options.typeCheck` is on too**, which adds tsgo's own compiler diagnostics — the same
+`TS2322`-style errors `tsc` reports, verified side by side. So `pnpm lint` alone would catch
+a type error even if `pnpm typecheck` did not run; the separate step stays because `pnpm
+build` needs a gate that does not depend on the linter. Neither flag is measurable in the
+runtime: a full `vp lint` stays around 0.5s.
 
 This also means `tsconfig.json` must `include` every file Oxlint lints. `eslint.config.mts`
 is in there for that reason; left out, tsgo checks it against defaults where `@types/node`'s
@@ -205,16 +205,39 @@ or typescript-eslint's project service errors on the duplicate.
 Strict mode with `noUncheckedIndexedAccess`, `strictNullChecks`, `noImplicitAny`. Source in `src/`.
 `moduleResolution` is `bundler`, matching the Vite build.
 
-**TypeScript is held at 5.x, and exactly one thing is still in the way.**
+**Type checking runs on TypeScript 7. `typescript` is still 5.9 for one consumer only.**
 
-**typescript-eslint refuses to load under TS 7.** It declares `typescript: >=4.8.4 <6.1.0`,
-and `eslint-plugin-obsidianmd` depends on it. This is not a peer warning: `dist/index.js`
-throws on `versionMajor >= 7` before it exports anything, so `pnpm lint:eslint` exits 2 with
-"typescript-eslint does not support TS 7.0". Still true as of typescript-eslint 8.69.0;
-tracked in [typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)
-for TS >= 7.1. **When that ships, bump `typescript` and nothing else should need doing** —
-`tsc --noEmit` from both `typescript@6.0.3` and `typescript@7.0.2` already passes clean
-against this tsconfig, and `pnpm test:run` never depended on the version at all.
+There are two TypeScript packages in `devDependencies`, and the split is deliberate:
+
+| Package | Version | Who uses it |
+| --- | --- | --- |
+| `typescript7` (`npm:typescript@7.0.2`) | 7.x | `pnpm typecheck`, and `pnpm build` through it |
+| `typescript` | 5.9.x | **typescript-eslint only** — nothing else resolves it |
+
+This works because **TypeScript never emits here.** Every invocation is `--noEmit`; Rolldown
+does the transpiling. So the version that type-checks and the version a lint plugin links
+against have nothing to do with each other, and swapping the former changes no output.
+
+Why not just put 7 in `typescript`: **typescript-eslint refuses to load under TS 7.** It
+declares `typescript: >=4.8.4 <6.1.0`, and `eslint-plugin-obsidianmd` depends on it. This is
+not a peer warning — `dist/index.js` throws on `versionMajor >= 7` before it exports
+anything, so `pnpm lint:eslint` exits 2 with "typescript-eslint does not support TS 7.0".
+Still true as of typescript-eslint 8.69.0; tracked in
+[typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)
+for TS >= 7.1. **When that ships: delete the `typescript7` alias, move `typescript` to 7, and
+point `typecheck` back at plain `tsc`.** Nothing else should need doing — `tsc --noEmit` from
+`typescript@6.0.3` and `@7.0.2` both pass clean already, and `pnpm test:run` never depended
+on the version at all.
+
+Two things to keep in mind while the alias is there:
+
+- **Scripts must name the binary explicitly** (`node node_modules/typescript7/bin/tsc`).
+  Both packages ship a `tsc` bin, so a bare `pnpm exec tsc` resolves by whichever won the
+  `node_modules/.bin` collision — today that is 7, but it is not something to depend on.
+  `lefthook.yml` calls `pnpm typecheck` rather than `tsc` for the same reason: the path
+  is written down once.
+- Do not add `typescript` to anything new. If a second consumer starts resolving it, the
+  table above stops being true and the 5.9 pin turns into a real constraint.
 
 The source no longer breaks under 7 because of `src/obsidianMoment.ts`. **That file exists
 solely to work around an upstream bug and should be deleted when the bug is fixed.** TS 7
