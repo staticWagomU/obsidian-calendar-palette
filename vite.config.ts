@@ -64,6 +64,28 @@ export default defineConfig(({ mode }) => {
 	}
 
 	return {
+		// Oxlint の設定はここに置く。ルートに `oxlint.json` を置いても
+		// 読まれない（Oxlint が探すのは `.oxlintrc.json`）ため、Vite+ は
+		// この lint ブロックを唯一の置き場所として案内している。
+		lint: {
+			// plugins は既定を置き換えてしまうので指定しない。
+			// 既定の unicorn / typescript / oxc をそのまま使う。
+			categories: {
+				correctness: "error",
+				suspicious: "warn",
+				perf: "warn",
+				pedantic: "off",
+				style: "off",
+			},
+			rules: {
+				"no-unused-vars": "warn",
+				"no-console": "warn",
+				"typescript/no-explicit-any": "warn",
+			},
+			// main.js と coverage/ は .gitignore 済みで Oxlint が自動で外す。
+			// リリース用スクリプトだけは追跡下にあるので明示的に外す。
+			ignorePatterns: ["version-bump.mjs"],
+		},
 		plugins: [bannerPlugin()],
 		build: {
 			outDir,
