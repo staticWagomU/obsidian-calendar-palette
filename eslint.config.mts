@@ -26,6 +26,8 @@ export default defineConfig(
 	globalIgnores([
 		"node_modules",
 		"dist",
+		// Written by `pnpm test:coverage`; gitignored, but ESLint still walks it.
+		"coverage",
 		"vite.config.ts",
 		"version-bump.mjs",
 		"versions.json",
