@@ -140,6 +140,31 @@ print a redirect and exit 1. Use `vp lint` / `vp fmt` — this is why `lefthook.
 `vp toolchain` prints the exact bundled tool versions. `vp check` runs format + lint + types
 in one pass.
 
+### Lint Configuration
+
+**The Oxlint config lives in the `lint` block of `vite.config.ts`, and nowhere else.**
+A root `oxlint.json` is _not_ read — Oxlint looks for `.oxlintrc.json` — and Vite+ asks
+for the `lint` block anyway so all toolchain config stays in one file. This repo carried
+a dead `oxlint.json` for a while; `vp lint --print-config` is what proves which rules are
+actually live, and is worth running after any change here.
+
+Two things about that block are easy to get wrong:
+
+- **Do not set `plugins`.** Naming plugins _replaces_ the default set rather than adding
+  to it, so `plugins: ["typescript"]` silently switches `unicorn` and `oxc` off.
+- **`ignorePatterns` is for tracked files only.** Oxlint already skips anything in
+  `.gitignore`, so `main.js` and `coverage/` need no entry.
+
+**`options.typeAware` is on.** It enables the rules that need type information
+(`no-floating-promises`, `no-unsafe-type-assertion`, `consistent-return`, …). The engine
+is `oxlint-tsgolint`, bundled by Vite+ — that is the **TypeScript 7** native
+implementation, and it runs independently of the `typescript` in `devDependencies`. Full
+runs take well under a second, so `lefthook.yml` pays nothing for it.
+
+`options.typeCheck` (tsgo's own compiler diagnostics, via `vp lint --type-aware
+--type-check`) is deliberately **off**; see the TypeScript 7 note below for why. It is
+still useful to run by hand as a preview of what TS 7 would say.
+
 ### pnpm Configuration
 
 - `package.json` pins the package manager (`packageManager: pnpm@10.26.0`) and requires
@@ -171,10 +196,34 @@ in one pass.
 Strict mode with `noUncheckedIndexedAccess`, `strictNullChecks`, `noImplicitAny`. Source in `src/`.
 `moduleResolution` is `bundler`, matching the Vite build.
 
-**TypeScript is held at 5.x on purpose.** TypeScript 7 is released, but `typescript-eslint`
-declares `typescript: >=4.8.4 <6.1.0`, and `eslint-plugin-obsidianmd` depends on
-typescript-eslint. Bumping to 7 makes `pnpm lint` fail outright with
-"typescript-eslint does not support TS 7.0". Revisit once typescript-eslint ships TS 7 support.
+**TypeScript is held at 5.x on purpose.** TypeScript 7 is released, but **two** separate
+things break, and clearing only one of them is not enough. Both were verified by installing
+`typescript@7.0.2` and running every command; tests pass (Vitest never sees types), lint and
+build do not.
+
+1. **typescript-eslint refuses to load.** It declares `typescript: >=4.8.4 <6.1.0`, and
+   `eslint-plugin-obsidianmd` depends on it. This is not a peer warning: `dist/index.js`
+   throws on `versionMajor >= 7` before it exports anything, so `pnpm lint:eslint` exits 2
+   with "typescript-eslint does not support TS 7.0". Still true as of typescript-eslint
+   8.69.0; tracked in [typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)
+   for TS >= 7.1.
+2. **Obsidian's own type definitions stop compiling.** TS 7 **removed** `esModuleInterop=false`
+   (TS 6 merely deprecates it), so interop is always on. `obsidian.d.ts` does
+   `import * as Moment from 'moment'` and re-exports `export const moment: typeof Moment`;
+   with interop on, a namespace import of a CJS `export =` module has no call signatures.
+   Every `moment(...)` in this repo becomes `TS2349: This expression is not callable` —
+   currently three sites, in `obsidianEnvironment.ts` and `CalendarModal.ts`. This is an
+   upstream problem in the `obsidian` package, independent of the lint one, and it will not
+   go away when typescript-eslint catches up.
+
+**TypeScript 6.0.3 is not a shortcut.** Its peer range does satisfy typescript-eslint, but
+it defaults `esModuleInterop` to true as well, so it hits problem 2 unchanged. Getting there
+would need `ignoreDeprecations: "6.0"` plus `esModuleInterop: false`, which only defers the
+work.
+
+`vp lint --type-aware --type-check` reproduces problem 2 without installing anything, since
+`oxlint-tsgolint` already embeds TS 7. That is the cheapest way to re-test whether upstream
+has fixed the `moment` declaration.
 
 ## Skills
 
