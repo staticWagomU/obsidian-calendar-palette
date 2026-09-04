@@ -104,7 +104,12 @@ export default defineConfig(({ mode }) => {
 			coverage: {
 				provider: "v8",
 				reporter: ["text", "json", "html"],
-				exclude: ["node_modules/", "src/**/*.test.ts"],
+				// Report every source file, not only the ones a test happened to
+				// import. Without this the untested modules are simply absent and
+				// the summary reads 100%, which is the opposite of the point.
+				all: true,
+				include: ["src/**/*.ts"],
+				exclude: ["src/**/*.test.ts"],
 			},
 			server: {
 				deps: {

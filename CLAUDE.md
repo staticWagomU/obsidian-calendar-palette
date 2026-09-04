@@ -77,12 +77,51 @@ When set, `pnpm dev` outputs `main.js` directly to the vault. Production build (
 
 ```
 src/
-  main.ts      # Plugin entry point - keep minimal, lifecycle only
-  settings.ts  # Settings interface, defaults, and SettingTab
-  *.test.ts    # Vitest tests (pure logic only, no Obsidian deps)
+  main.ts                      # Plugin entry point - keep minimal, lifecycle only
+  settings.ts                  # Settings types, defaults, and the declarative SettingTab
+  commands/index.ts            # Wiring: reads settings, assembles collaborators, opens the modal
+  calendar/
+    dateMath.ts                # Date arithmetic on local-midnight Dates
+    monthGrid.ts               # The 6x7 grid for one month
+    navigation.ts              # Where a key lands, and which way the grid travels
+  dailyNote/
+    coreSettings.ts            # Reads the core Daily notes plugin's folder/format/template
+    notePath.ts                # Folder + formatted date -> vault path and its ancestors
+    template.ts                # Expands {{date}} / {{time}} / {{title}}
+    environment.ts             # DailyNoteEnvironment: what opening a note needs, as an interface
+    obsidianEnvironment.ts     # The one adapter that talks to App/Vault/Notice
+    openDailyNote.ts           # Decides create-or-open, ask-or-not, which message
+  ui/
+    keymap.ts                  # Keystroke -> CalendarAction
+    CalendarModal.ts           # The grid's DOM and animation
+    ConfirmModal.ts            # Yes/no dialog
+  **/*.test.ts                 # Vitest, colocated with the module under test
 ```
 
 **Key pattern**: `main.ts` should only handle plugin lifecycle (`onload`, `onunload`). Delegate feature logic to separate modules.
+
+### Why modules avoid importing `obsidian`
+
+The `obsidian` npm package is **types only** — its `package.json` has `"main": ""`, and
+`vite.config.ts` externalises it for tests as well as for the build. So any module that
+imports a _value_ from `obsidian` (`Notice`, `TFile`, `moment`, `normalizePath`, `Modal`)
+is unreachable from Vitest and cannot be tested at all. A `import type` is erased, so it
+costs nothing — which is why `coreSettings.ts` is testable despite taking an `App`.
+
+The convention that follows: **push decisions away from the Obsidian surface.**
+
+- `template.ts` takes `formatDate` / `formatTime` as arguments rather than importing `moment`.
+- `openDailyNote.ts` states everything it needs as `DailyNoteEnvironment` and takes it as a
+  parameter; `obsidianEnvironment.ts` is the only implementation and holds nothing but
+  one-line delegations, because anything that can branch belongs on the testable side.
+- `navigation.ts` holds the focus and paging rules that used to live inside `CalendarModal`.
+
+`pnpm test:coverage` reports every file under `src/`, so the modules still stuck on the
+Obsidian side of the line show up as 0% rather than disappearing from the summary. The
+files legitimately left there are the DOM shells (`CalendarModal`, `ConfirmModal`), the
+lifecycle (`main.ts`), the wiring (`commands/index.ts`), the declarative settings data, and
+the single adapter. Covering the two modals would need a DOM environment plus a hand-written
+`obsidian` stub; that trade has not been taken.
 
 ## Build System
 
