@@ -4,28 +4,207 @@
 .calendar-palette-modal {
 	width: auto;
 	max-width: 22rem;
+	/* A column, so a short window eats into the grid instead of scrolling
+	   the heading and the close button out of reach. Obsidian caps .modal
+	   with max-height; without this the whole modal is the scroll port. */
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+
+	/* Paging motion. Declared here rather than on .calendar-palette
+	   because .modal-title is a sibling of the content, not a child, and
+	   the month label has to inherit the same timing as the grid. */
+	--cp-page-distance: 100%;
+	/* The label travels far less than the grid. Distance should scale
+	   with the thing being moved: a full-width throw on one line of text
+	   reads as a slot machine, not as a month changing. In em so it
+	   tracks whichever heading the month happens to live in. */
+	--cp-label-distance: 0.75em;
+	--cp-page-duration: 200ms;
+	/* Decelerating: fastest at the moment the new month appears, settling
+	   as it lands. Fast enough to keep up with a held Page down. */
+	--cp-page-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-.calendar-palette-month {
-	font-size: var(--font-ui-medium);
-	font-weight: var(--font-semibold);
-	text-align: center;
-	margin-bottom: var(--size-4-3);
+.calendar-palette-modal .modal-content {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	/* Do not hand the wheel back to the note underneath at either end. */
+	overscroll-behavior: contain;
+	/* Park the scrollbar in the modal's own padding rather than on top of
+	   the Saturday column. */
+	margin-right: calc(-1 * var(--size-4-6));
+	padding-right: var(--size-4-6);
 }
 
+/* ---- The month label ---------------------------------------------
+   The month slides sideways while the grid slides vertically, so the
+   heading and the days stay legible as two separate planes instead of
+   one block of text moving past another. What ties them together is
+   the shared duration and easing, not a shared axis. */
+.calendar-palette-modal .modal-title {
+	/* Never absorbs the shortfall when the window is too short; the grid does. */
+	flex: none;
+	position: relative;
+	/* Clip sideways only. A negative vertical inset keeps descenders and
+	   any focus ring intact, which plain overflow: hidden would shave. */
+	clip-path: inset(-0.5em 0);
+	/* Line the heading up with the first column's label instead of with
+	   the modal's padding edge. A day cell centres its contents, so the
+	   leftmost glyph starts half a column's slack in, and a heading at
+	   the padding edge reads as hanging off to the left. Symmetric, so a
+	   centred heading stays centred. Measured at render time: the inset
+	   is set by how wide the weekday abbreviation is ("Mon" against
+	   "月"), which no stylesheet can know in advance. */
+	padding-inline: var(--cp-column-inset, 0px);
+}
+
+/* The close button joins the heading line instead of sitting in the
+   corner. Obsidian's default 12px corner offset assumes a modal whose
+   title is incidental; here the month *is* the heading, and a button
+   floating above it reads as unrelated chrome.
+
+   Absolute offsets are measured from the padding box, so top/right at
+   the modal's own padding puts the button's box exactly on the title's
+   content box, and sizing it to the title's line box centres the glyph
+   on the text without a magic number. */
+.calendar-palette-modal .modal-close-button {
+	--cp-heading-line: calc(var(--font-ui-large) * var(--line-height-tight));
+	top: var(--size-4-6);
+	right: var(--size-4-6);
+	width: var(--cp-heading-line);
+	height: var(--cp-heading-line);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.calendar-palette-label {
+	display: block;
+}
+
+.calendar-palette-label.is-leaving {
+	position: absolute;
+	inset: 0;
+}
+
+.calendar-palette-label.is-entering,
+.calendar-palette-label.is-leaving {
+	animation-duration: var(--cp-page-duration);
+	animation-timing-function: var(--cp-page-ease);
+	animation-fill-mode: both;
+}
+
+/* Forward = a later month, which arrives from the right and pushes the
+   old one off to the left, following the direction of reading. */
+[data-page-dir="forward"] > .calendar-palette-label.is-entering {
+	animation-name: cp-label-in-right;
+}
+
+[data-page-dir="forward"] > .calendar-palette-label.is-leaving {
+	animation-name: cp-label-out-left;
+}
+
+[data-page-dir="back"] > .calendar-palette-label.is-entering {
+	animation-name: cp-label-in-left;
+}
+
+[data-page-dir="back"] > .calendar-palette-label.is-leaving {
+	animation-name: cp-label-out-right;
+}
+
+/* The opacity is sequenced, not crossfaded. Two panes travelling a full
+   pane-height never overlap, but two labels travelling a fraction of an
+   em sit almost exactly on top of each other, and "September 2026" over
+   "October 2026" is an unreadable smear. So the old text is gone by 45%
+   and the new one only starts showing at 33% — the stops overlap because
+   the easing has the outgoing text down to a few percent long before its
+   declared stop, and a hard handoff would leave the heading blank for a
+   frame. Transform is untouched by those stops and glides across the
+   whole duration, which is what keeps the movement continuous while the
+   text itself hard-swaps. */
+@keyframes cp-label-in-right {
+	from {
+		transform: translateX(var(--cp-label-distance));
+		opacity: 0;
+	}
+	33% {
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+
+@keyframes cp-label-out-left {
+	from {
+		opacity: 1;
+	}
+	45% {
+		opacity: 0;
+	}
+	to {
+		transform: translateX(calc(-1 * var(--cp-label-distance)));
+		opacity: 0;
+	}
+}
+
+@keyframes cp-label-in-left {
+	from {
+		transform: translateX(calc(-1 * var(--cp-label-distance)));
+		opacity: 0;
+	}
+	33% {
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+
+@keyframes cp-label-out-right {
+	from {
+		opacity: 1;
+	}
+	45% {
+		opacity: 0;
+	}
+	to {
+		transform: translateX(var(--cp-label-distance));
+		opacity: 0;
+	}
+}
+
+/* Grid of divs rather than a table: the week rows need a clipping box of
+   their own to slide inside, and no element is allowed between <table>
+   and <tbody>. role="grid" and friends carry the semantics the table used
+   to give for free. Each row lays out its own seven equal columns, so the
+   weekday header and every week line up without a shared table layout. */
 .calendar-palette-grid {
-	width: 100%;
-	border-collapse: collapse;
-	table-layout: fixed;
 	user-select: none;
 }
 
-.calendar-palette-grid th {
+.calendar-palette-weekdays,
+.calendar-palette-week {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-palette-weekdays {
 	font-size: var(--font-ui-smaller);
 	font-weight: var(--font-normal);
 	color: var(--text-faint);
 	padding-bottom: var(--size-4-1);
 	text-align: center;
+	/* A day cell is meaningless without its column, so the header stays
+	   put while the weeks scroll under it. */
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background-color: var(--background-primary);
 }
 
 .calendar-palette-day {
@@ -79,4 +258,97 @@
 	color: var(--text-faint);
 	text-align: center;
 	line-height: var(--line-height-tight);
+}
+
+/* ---- Month paging ------------------------------------------------
+   Every month renders six week rows, so the viewport never changes
+   height and the two panes are always the same size. The outgoing and
+   incoming panes cover the same distance in the same time, which is
+   what makes the pair read as one strip being scrolled rather than two
+   months crossing over each other. */
+.calendar-palette-weeks {
+	position: relative;
+	overflow: hidden;
+}
+
+/* Taken out of flow so it cannot add to the viewport height on its way
+   out, and made inert so a click cannot land on a day already leaving. */
+.calendar-palette-pane.is-leaving {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.calendar-palette-pane.is-entering,
+.calendar-palette-pane.is-leaving {
+	animation-duration: var(--cp-page-duration);
+	animation-timing-function: var(--cp-page-ease);
+	animation-fill-mode: both;
+}
+
+/* Forward = a later month, which arrives from below. */
+.calendar-palette-weeks[data-page-dir="forward"] .calendar-palette-pane.is-entering {
+	animation-name: cp-pane-in-below;
+}
+
+.calendar-palette-weeks[data-page-dir="forward"] .calendar-palette-pane.is-leaving {
+	animation-name: cp-pane-out-above;
+}
+
+.calendar-palette-weeks[data-page-dir="back"] .calendar-palette-pane.is-entering {
+	animation-name: cp-pane-in-above;
+}
+
+.calendar-palette-weeks[data-page-dir="back"] .calendar-palette-pane.is-leaving {
+	animation-name: cp-pane-out-below;
+}
+
+@keyframes cp-pane-in-below {
+	from {
+		transform: translateY(var(--cp-page-distance));
+		opacity: 0;
+	}
+}
+
+@keyframes cp-pane-out-above {
+	to {
+		transform: translateY(calc(-1 * var(--cp-page-distance)));
+		opacity: 0;
+	}
+}
+
+@keyframes cp-pane-in-above {
+	from {
+		transform: translateY(calc(-1 * var(--cp-page-distance)));
+		opacity: 0;
+	}
+}
+
+@keyframes cp-pane-out-below {
+	to {
+		transform: translateY(var(--cp-page-distance));
+		opacity: 0;
+	}
+}
+
+/* Mobile: Obsidian widens modals to nearly the full viewport on phones,
+   which the 22rem max-width above would otherwise fight. Scoped to this
+   modal — a bare .modal rule would restyle every dialog in the app. */
+@media (max-width: 480px) {
+	.calendar-palette-modal {
+		max-width: 100%;
+		width: 100%;
+		padding: var(--size-4-4);
+	}
+
+	/* Keep the scrollbar gutter matched to the smaller padding. */
+	.calendar-palette-modal .modal-content {
+		margin-right: calc(-1 * var(--size-4-4));
+		padding-right: var(--size-4-4);
+	}
+
+	.calendar-palette-modal .modal-close-button {
+		top: var(--size-4-4);
+		right: var(--size-4-4);
+	}
 }
