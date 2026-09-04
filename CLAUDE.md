@@ -79,6 +79,7 @@ When set, `pnpm dev` outputs `main.js` directly to the vault. Production build (
 src/
   main.ts                      # Plugin entry point - keep minimal, lifecycle only
   settings.ts                  # Settings types, defaults, and the declarative SettingTab
+  obsidianMoment.ts            # The only module that touches `moment`; see the TS 7 note
   commands/index.ts            # Wiring: reads settings, assembles collaborators, opens the modal
   calendar/
     dateMath.ts                # Date arithmetic on local-midnight Dates
@@ -119,9 +120,9 @@ The convention that follows: **push decisions away from the Obsidian surface.**
 `pnpm test:coverage` reports every file under `src/`, so the modules still stuck on the
 Obsidian side of the line show up as 0% rather than disappearing from the summary. The
 files legitimately left there are the DOM shells (`CalendarModal`, `ConfirmModal`), the
-lifecycle (`main.ts`), the wiring (`commands/index.ts`), the declarative settings data, and
-the single adapter. Covering the two modals would need a DOM environment plus a hand-written
-`obsidian` stub; that trade has not been taken.
+lifecycle (`main.ts`), the wiring (`commands/index.ts`), the declarative settings data, the
+single adapter, and `obsidianMoment.ts`. Covering the two modals would need a DOM
+environment plus a hand-written `obsidian` stub; that trade has not been taken.
 
 ## Build System
 
@@ -161,9 +162,17 @@ is `oxlint-tsgolint`, bundled by Vite+ — that is the **TypeScript 7** native
 implementation, and it runs independently of the `typescript` in `devDependencies`. Full
 runs take well under a second, so `lefthook.yml` pays nothing for it.
 
-`options.typeCheck` (tsgo's own compiler diagnostics, via `vp lint --type-aware
---type-check`) is deliberately **off**; see the TypeScript 7 note below for why. It is
-still useful to run by hand as a preview of what TS 7 would say.
+**`options.typeCheck` is on too**, which adds tsgo's own compiler diagnostics. The effect
+is that every `pnpm lint` type-checks the project twice — once as `tsc` 5.9 sees it, once
+as TypeScript 7 does — so a construct that only breaks under 7 is caught the day it is
+written rather than at upgrade time. Neither flag is measurable in the runtime: a full
+`vp lint` stays around 0.5s.
+
+This also means `tsconfig.json` must `include` every file Oxlint lints. `eslint.config.mts`
+is in there for that reason; left out, tsgo checks it against defaults where `@types/node`'s
+`ImportMeta` augmentation is missing and `import.meta.dirname` fails. Note the knock-on:
+a file in `include` must _not_ also appear in `allowDefaultProject` in `eslint.config.mts`,
+or typescript-eslint's project service errors on the duplicate.
 
 ### pnpm Configuration
 
@@ -196,34 +205,29 @@ still useful to run by hand as a preview of what TS 7 would say.
 Strict mode with `noUncheckedIndexedAccess`, `strictNullChecks`, `noImplicitAny`. Source in `src/`.
 `moduleResolution` is `bundler`, matching the Vite build.
 
-**TypeScript is held at 5.x on purpose.** TypeScript 7 is released, but **two** separate
-things break, and clearing only one of them is not enough. Both were verified by installing
-`typescript@7.0.2` and running every command; tests pass (Vitest never sees types), lint and
-build do not.
+**TypeScript is held at 5.x, and exactly one thing is still in the way.**
 
-1. **typescript-eslint refuses to load.** It declares `typescript: >=4.8.4 <6.1.0`, and
-   `eslint-plugin-obsidianmd` depends on it. This is not a peer warning: `dist/index.js`
-   throws on `versionMajor >= 7` before it exports anything, so `pnpm lint:eslint` exits 2
-   with "typescript-eslint does not support TS 7.0". Still true as of typescript-eslint
-   8.69.0; tracked in [typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)
-   for TS >= 7.1.
-2. **Obsidian's own type definitions stop compiling.** TS 7 **removed** `esModuleInterop=false`
-   (TS 6 merely deprecates it), so interop is always on. `obsidian.d.ts` does
-   `import * as Moment from 'moment'` and re-exports `export const moment: typeof Moment`;
-   with interop on, a namespace import of a CJS `export =` module has no call signatures.
-   Every `moment(...)` in this repo becomes `TS2349: This expression is not callable` —
-   currently three sites, in `obsidianEnvironment.ts` and `CalendarModal.ts`. This is an
-   upstream problem in the `obsidian` package, independent of the lint one, and it will not
-   go away when typescript-eslint catches up.
+**typescript-eslint refuses to load under TS 7.** It declares `typescript: >=4.8.4 <6.1.0`,
+and `eslint-plugin-obsidianmd` depends on it. This is not a peer warning: `dist/index.js`
+throws on `versionMajor >= 7` before it exports anything, so `pnpm lint:eslint` exits 2 with
+"typescript-eslint does not support TS 7.0". Still true as of typescript-eslint 8.69.0;
+tracked in [typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)
+for TS >= 7.1. **When that ships, bump `typescript` and nothing else should need doing** —
+`tsc --noEmit` from both `typescript@6.0.3` and `typescript@7.0.2` already passes clean
+against this tsconfig, and `pnpm test:run` never depended on the version at all.
 
-**TypeScript 6.0.3 is not a shortcut.** Its peer range does satisfy typescript-eslint, but
-it defaults `esModuleInterop` to true as well, so it hits problem 2 unchanged. Getting there
-would need `ignoreDeprecations: "6.0"` plus `esModuleInterop: false`, which only defers the
-work.
+The source no longer breaks under 7 because of `src/obsidianMoment.ts`. **That file exists
+solely to work around an upstream bug and should be deleted when the bug is fixed.** TS 7
+_removed_ the option to turn `esModuleInterop` off (TS 6 merely deprecates it), so interop
+is always on; `obsidian.d.ts` does `import * as Moment from 'moment'` and re-exports
+`export const moment: typeof Moment`, and with interop on, a namespace import of a CJS
+`export =` module has no call signatures. Every `moment(...)` became
+`TS2349: This expression is not callable`. Property access such as `moment.weekdaysShort()`
+was never affected, which is why only the call form needs a cast.
 
-`vp lint --type-aware --type-check` reproduces problem 2 without installing anything, since
-`oxlint-tsgolint` already embeds TS 7. That is the cheapest way to re-test whether upstream
-has fixed the `moment` declaration.
+To check whether upstream has fixed the declaration: drop the cast in `obsidianMoment.ts`
+and run `pnpm lint`. `typeCheck` is on, so tsgo — which _is_ TypeScript 7 — will say. If it
+stays quiet, inline the three functions and delete the file.
 
 ## Skills
 
