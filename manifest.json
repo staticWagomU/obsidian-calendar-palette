@@ -2,7 +2,7 @@
 	"id": "calendar-palette",
 	"name": "Calendar palette",
 	"version": "1.0.0",
-	"minAppVersion": "1.4.0",
+	"minAppVersion": "1.13.0",
 	"description": "Open a keyboard-driven calendar from anywhere and jump to any day's daily note.",
 	"author": "staticWagomU",
 	"authorUrl": "https://github.com/staticWagomU",

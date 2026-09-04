@@ -1,5 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
-import type CalendarPalettePlugin from "./main";
+import { PluginSettingTab, type SettingDefinitionItem } from "obsidian";
 import type { KeymapMode } from "./ui/keymap";
 
 /** Which column the calendar grid starts on. */
@@ -35,126 +34,111 @@ export const DEFAULT_SETTINGS: CalendarPaletteSettings = {
 	dimNoteDotOutsideMonth: true,
 };
 
+/** Every control binds to one of these, which is what the base class stores. */
+type SettingKey = keyof CalendarPaletteSettings;
+
+/**
+ * Declared rather than built in `display()`, because from Obsidian 1.13 the
+ * settings search indexes these definitions: a tab that only creates its rows
+ * imperatively is unreachable from the search box. Reading and persisting each
+ * `key` against `plugin.settings` is the base class's job, so there is no
+ * onChange to write here and no way for a control to drift from its storage.
+ */
 export class CalendarPaletteSettingTab extends PluginSettingTab {
-	plugin: CalendarPalettePlugin;
-
-	constructor(app: App, plugin: CalendarPalettePlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName("First day of the week")
-			.setDesc("Which column the calendar starts on.")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("locale", "Follow locale")
-					.addOption("sunday", "Sunday")
-					.addOption("monday", "Monday")
-					.setValue(this.plugin.settings.weekStart)
-					.onChange(async (value) => {
-						this.plugin.settings.weekStart = value as WeekStart;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Confirm before creating a note")
-			.setDesc("Ask before creating a daily note that does not exist yet.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.confirmBeforeCreate)
-					.onChange(async (value) => {
-						this.plugin.settings.confirmBeforeCreate = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl).setName("Keyboard").setHeading();
-
-		new Setting(containerEl)
-			.setName("Key bindings")
-			.setDesc(
-				"Extra keys layered on top of the arrows, which always work. " +
-					"Vim: h j k l, Ctrl+B/Ctrl+F by month, add Shift for a year. " +
-					"Emacs: Ctrl+B/F/P/N, Ctrl+V and Alt+V by month, add Shift for a year, . for today.",
-			)
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("default", "Arrows only")
-					.addOption("vim", "Vim")
-					.addOption("emacs", "Emacs")
-					.setValue(this.plugin.settings.keymap)
-					.onChange(async (value) => {
-						this.plugin.settings.keymap = value as KeymapMode;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl).setName("Appearance").setHeading();
-
-		new Setting(containerEl)
-			.setName("Modal title")
-			.setDesc("Where the month is written, and what the modal's title says.")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("title-left", "Month as title, left")
-					.addOption("title-center", "Month as title, centred")
-					.addOption("month-only", "No title, centred month line")
-					.addOption("calendar", "Fixed title plus a month line")
-					.setValue(this.plugin.settings.titleMode)
-					.onChange(async (value) => {
-						this.plugin.settings.titleMode = value as TitleMode;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Month transition")
-			.setDesc("How the grid moves when you page from one month to the next.")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("slide", "Slide — full height, directional")
-					.addOption("soft", "Slide — short throw, heavier fade")
-					.addOption("none", "None")
-					.setValue(this.plugin.settings.monthTransition)
-					.onChange(async (value) => {
-						this.plugin.settings.monthTransition = value as MonthTransition;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Higher contrast weekday headers")
-			.setDesc(
-				"Draw the weekday abbreviations and the hint line at the muted text " +
-					"colour, which clears the WCAG AA contrast threshold. Turn off for the fainter look.",
-			)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.mutedWeekdays).onChange(async (value) => {
-					this.plugin.settings.mutedWeekdays = value;
-					await this.plugin.saveSettings();
-				}),
-			);
-
-		new Setting(containerEl)
-			.setName("Dim the note dot on adjacent-month days")
-			.setDesc(
-				"Match the dot to the greyed-out date it belongs to, so a neighbouring " +
-					"month does not draw the eye more than the month you are in.",
-			)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.dimNoteDotOutsideMonth)
-					.onChange(async (value) => {
-						this.plugin.settings.dimNoteDotOutsideMonth = value;
-						await this.plugin.saveSettings();
-					}),
-			);
+	override getSettingDefinitions(): SettingDefinitionItem<SettingKey>[] {
+		return [
+			{
+				name: "First day of the week",
+				desc: "Which column the calendar starts on.",
+				control: {
+					type: "dropdown",
+					key: "weekStart",
+					options: {
+						locale: "Follow locale",
+						sunday: "Sunday",
+						monday: "Monday",
+					},
+				},
+			},
+			{
+				name: "Confirm before creating a note",
+				desc: "Ask before creating a daily note that does not exist yet.",
+				control: { type: "toggle", key: "confirmBeforeCreate" },
+			},
+			{
+				type: "group",
+				heading: "Keyboard",
+				items: [
+					{
+						name: "Key bindings",
+						desc:
+							"Extra keys layered on top of the arrows, which always work. " +
+							"Vim: h j k l, Ctrl+B/Ctrl+F by month, add Shift for a year. " +
+							"Emacs: Ctrl+B/F/P/N, Ctrl+V and Alt+V by month, add Shift for a year, . for today.",
+						// The names a user searching the settings would type; none of
+						// them appear in the name or the description above.
+						aliases: ["vim", "emacs", "hjkl", "shortcut"],
+						control: {
+							type: "dropdown",
+							key: "keymap",
+							options: {
+								default: "Arrows only",
+								vim: "Vim",
+								emacs: "Emacs",
+							},
+						},
+					},
+				],
+			},
+			{
+				type: "group",
+				heading: "Appearance",
+				items: [
+					{
+						name: "Modal title",
+						desc: "Where the month is written, and what the modal's title says.",
+						control: {
+							type: "dropdown",
+							key: "titleMode",
+							options: {
+								"title-left": "Month as title, left",
+								"title-center": "Month as title, centred",
+								"month-only": "No title, centred month line",
+								calendar: "Fixed title plus a month line",
+							},
+						},
+					},
+					{
+						name: "Month transition",
+						desc: "How the grid moves when you page from one month to the next.",
+						aliases: ["animation", "motion"],
+						control: {
+							type: "dropdown",
+							key: "monthTransition",
+							options: {
+								slide: "Slide — full height, directional",
+								soft: "Slide — short throw, heavier fade",
+								none: "None",
+							},
+						},
+					},
+					{
+						name: "Higher contrast weekday headers",
+						desc:
+							"Draw the weekday abbreviations and the hint line at the muted text " +
+							"colour, which clears the WCAG AA contrast threshold. Turn off for the fainter look.",
+						aliases: ["accessibility", "contrast"],
+						control: { type: "toggle", key: "mutedWeekdays" },
+					},
+					{
+						name: "Dim the note dot on adjacent-month days",
+						desc:
+							"Match the dot to the greyed-out date it belongs to, so a neighbouring " +
+							"month does not draw the eye more than the month you are in.",
+						control: { type: "toggle", key: "dimNoteDotOutsideMonth" },
+					},
+				],
+			},
+		];
 	}
 }
