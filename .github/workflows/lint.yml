@@ -15,7 +15,7 @@ jobs:
                 node-version: [20.x, 22.x]
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
             # 匿名モード（bot-id なし）: 悪意あるパッケージのブロックのみ有効。
             # 長期シークレットは不要。組織単位の追跡が必要になったら
