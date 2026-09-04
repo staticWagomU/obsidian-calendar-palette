@@ -80,6 +80,9 @@ async function createDailyNote<TNote>(
 		const normalized = env.normalizePath(folder);
 		const existing = env.entryAt(normalized);
 		// Vault.create does not create missing parents, so walk them outermost first.
+		// The await has to stay in the loop: a folder cannot be created before its
+		// own parent exists, so Promise.all would race the levels against each other.
+		// oxlint-disable-next-line no-await-in-loop
 		if (!existing) await env.createFolder(normalized);
 		else if (existing.kind !== "folder") {
 			throw new Error(`${normalized} exists but is not a folder`);

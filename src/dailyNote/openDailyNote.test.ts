@@ -29,13 +29,14 @@ interface FakeVaultOptions {
 	failCreate?: boolean;
 }
 
+const pad = (value: number) => String(value).padStart(2, "0");
+
 /**
  * Stand-in for the moment tokens this plugin actually uses: enough to tell the
  * patterns apart in an assertion without pulling moment into the test. One
  * pass, so a pattern that repeats a token (`YYYY/MM/YYYY-MM-DD`) still works.
  */
 function formatWithFakeMomentTokens(date: Date, pattern: string): string {
-	const pad = (value: number) => String(value).padStart(2, "0");
 	return pattern.replace(/YYYY|MM|DD|HH|mm/g, (token) => {
 		switch (token) {
 			case "YYYY":

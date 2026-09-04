@@ -79,9 +79,23 @@ export default defineConfig(({ mode }) => {
 			},
 			rules: {
 				"no-unused-vars": "warn",
-				"no-console": "warn",
+				// console.error だけは通す。ユーザーに出す Notice とは別に、
+				// 失敗の詳細を開発者コンソールへ残さないと原因が追えない。
+				"no-console": ["warn", { allow: ["error"] }],
 				"typescript/no-explicit-any": "warn",
+				// `new Notice(message)` は Obsidian の公開 API そのもので、
+				// 戻り値を捨てるのが正しい使い方。副作用のための new を
+				// 咎めるこのルールとは噛み合わない。
+				"no-new": "off",
 			},
+			overrides: [
+				{
+					// ビルド設定の console.log は開発者への出力先案内であって、
+					// プラグイン本体に混ざるログとは事情が違う。
+					files: ["vite.config.ts"],
+					rules: { "no-console": "off" },
+				},
+			],
 			// main.js と coverage/ は .gitignore 済みで Oxlint が自動で外す。
 			// リリース用スクリプトだけは追跡下にあるので明示的に外す。
 			ignorePatterns: ["version-bump.mjs"],
