@@ -1,6 +1,7 @@
 import { Notice } from "obsidian";
 import { getDailyNoteConfig, isDailyNotesPluginEnabled } from "../dailyNote/coreSettings";
-import { findDailyNote, openDailyNote } from "../dailyNote/openDailyNote";
+import { obsidianEnvironment } from "../dailyNote/obsidianEnvironment";
+import { hasDailyNote, openDailyNote } from "../dailyNote/openDailyNote";
 import type CalendarPalettePlugin from "../main";
 import { CalendarModal } from "../ui/CalendarModal";
 import { confirmCreateNote } from "../ui/ConfirmModal";
@@ -23,9 +24,10 @@ function openCalendar(plugin: CalendarPalettePlugin): void {
 		);
 	}
 
-	// Read once per open: the grid consults it for all 42 cells, and settings
-	// cannot change while the modal is up.
+	// Read once per open: the grid consults it for all 42 cells, and neither the
+	// daily note settings nor the plugin's own can change while the modal is up.
 	const config = getDailyNoteConfig(app);
+	const env = obsidianEnvironment(app);
 
 	new CalendarModal(app, {
 		weekStart: plugin.settings.weekStart,
@@ -34,9 +36,9 @@ function openCalendar(plugin: CalendarPalettePlugin): void {
 		keymap: plugin.settings.keymap,
 		mutedWeekdays: plugin.settings.mutedWeekdays,
 		dimNoteDotOutsideMonth: plugin.settings.dimNoteDotOutsideMonth,
-		hasNote: (date) => findDailyNote(app, date, config) !== null,
+		hasNote: (date) => hasDailyNote(date, config, env),
 		onPick: (date, newTab) => {
-			void openDailyNote(app, date, {
+			void openDailyNote(date, config, env, {
 				newTab,
 				confirmBeforeCreate: plugin.settings.confirmBeforeCreate,
 				confirm: (path) => confirmCreateNote(app, path),

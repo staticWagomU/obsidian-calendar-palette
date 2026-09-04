@@ -1,5 +1,5 @@
-import { App, normalizePath, Notice, TFile, TFolder, moment } from "obsidian";
-import { DEFAULT_TIME_FORMAT, getDailyNoteConfig, type DailyNoteConfig } from "./coreSettings";
+import { DEFAULT_TIME_FORMAT, type DailyNoteConfig } from "./coreSettings";
+import type { DailyNoteEnvironment } from "./environment";
 import { resolveDailyNotePath } from "./notePath";
 import { applyTemplate } from "./template";
 
@@ -13,15 +13,22 @@ export interface OpenDailyNoteOptions {
 }
 
 /** Normalised vault path the daily note for `date` would live at. */
-export function dailyNotePath(date: Date, config: DailyNoteConfig): string {
-	const formatted = moment(date).format(config.format);
-	return normalizePath(resolveDailyNotePath(config.folder, formatted).path);
+export function dailyNotePath(
+	date: Date,
+	config: DailyNoteConfig,
+	env: DailyNoteEnvironment,
+): string {
+	const formatted = env.formatDate(date, config.format);
+	return env.normalizePath(resolveDailyNotePath(config.folder, formatted).path);
 }
 
-/** The existing daily note for `date`, or null when it has not been created yet. */
-export function findDailyNote(app: App, date: Date, config: DailyNoteConfig): TFile | null {
-	const file = app.vault.getAbstractFileByPath(dailyNotePath(date, config));
-	return file instanceof TFile ? file : null;
+/** Whether a daily note for `date` has been created yet. */
+export function hasDailyNote(
+	date: Date,
+	config: DailyNoteConfig,
+	env: DailyNoteEnvironment,
+): boolean {
+	return env.entryAt(dailyNotePath(date, config, env))?.kind === "note";
 }
 
 /**
@@ -30,84 +37,83 @@ export function findDailyNote(app: App, date: Date, config: DailyNoteConfig): TF
  * Returns false when the user declined to create a missing note, so the caller
  * can keep the calendar open instead of dismissing it on a no-op.
  */
-export async function openDailyNote(
-	app: App,
+export async function openDailyNote<TNote>(
 	date: Date,
+	config: DailyNoteConfig,
+	env: DailyNoteEnvironment<TNote>,
 	options: OpenDailyNoteOptions,
 ): Promise<boolean> {
-	const config = getDailyNoteConfig(app);
-	const formatted = moment(date).format(config.format);
+	const formatted = env.formatDate(date, config.format);
 	const { path, ancestorFolders } = resolveDailyNotePath(config.folder, formatted);
-	const notePath = normalizePath(path);
+	const notePath = env.normalizePath(path);
 
-	const existing = app.vault.getAbstractFileByPath(notePath);
-	if (existing && !(existing instanceof TFile)) {
-		new Notice(`A folder already exists at ${notePath}.`);
+	const existing = env.entryAt(notePath);
+	if (existing && existing.kind !== "note") {
+		env.notify(`A folder already exists at ${notePath}.`);
 		return false;
 	}
 
-	let file = existing;
-	if (!file) {
+	let note = existing?.note;
+	if (note === undefined) {
 		if (options.confirmBeforeCreate && !(await options.confirm(notePath))) return false;
 		try {
-			file = await createDailyNote(app, date, notePath, ancestorFolders, config);
+			note = await createDailyNote(date, config, env, notePath, ancestorFolders);
 		} catch (error) {
 			console.error("Calendar palette: failed to create daily note", error);
-			new Notice(`Could not create ${notePath}.`);
+			env.notify(`Could not create ${notePath}.`);
 			return false;
 		}
 	}
 
-	const leaf = app.workspace.getLeaf(options.newTab ? "tab" : false);
-	await leaf.openFile(file);
+	await env.openNote(note, options.newTab);
 	return true;
 }
 
-async function createDailyNote(
-	app: App,
+async function createDailyNote<TNote>(
 	date: Date,
+	config: DailyNoteConfig,
+	env: DailyNoteEnvironment<TNote>,
 	notePath: string,
 	ancestorFolders: string[],
-	config: DailyNoteConfig,
-): Promise<TFile> {
+): Promise<TNote> {
 	for (const folder of ancestorFolders) {
-		const normalized = normalizePath(folder);
-		const existing = app.vault.getAbstractFileByPath(normalized);
+		const normalized = env.normalizePath(folder);
+		const existing = env.entryAt(normalized);
 		// Vault.create does not create missing parents, so walk them outermost first.
-		if (!existing) await app.vault.createFolder(normalized);
-		else if (!(existing instanceof TFolder)) {
+		if (!existing) await env.createFolder(normalized);
+		else if (existing.kind !== "folder") {
 			throw new Error(`${normalized} exists but is not a folder`);
 		}
 	}
 
-	const content = await renderTemplate(app, date, notePath, config);
-	return app.vault.create(notePath, content);
+	return env.createNote(notePath, await renderTemplate(date, config, env, notePath));
 }
 
 async function renderTemplate(
-	app: App,
 	date: Date,
-	notePath: string,
 	config: DailyNoteConfig,
+	env: DailyNoteEnvironment,
+	notePath: string,
 ): Promise<string> {
 	if (!config.template) return "";
 
-	// getFirstLinkpathDest resolves the template the way a wikilink would, so a
-	// setting stored without the ".md" extension still finds the file.
-	const templateFile = app.metadataCache.getFirstLinkpathDest(normalizePath(config.template), "");
-	if (!templateFile) {
-		new Notice(`Daily note template not found: ${config.template}`);
+	const raw = await env.readTemplate(config.template);
+	if (raw === null) {
+		env.notify(`Daily note template not found: ${config.template}`);
 		return "";
 	}
 
-	const raw = await app.vault.cachedRead(templateFile);
-	const basename = notePath.split("/").pop()?.replace(/\.md$/, "") ?? "";
-	const now = moment();
+	const now = env.now();
 	return applyTemplate(raw, {
-		formatDate: (pattern) => moment(date).format(pattern),
-		formatTime: (pattern) => now.format(pattern),
+		formatDate: (pattern) => env.formatDate(date, pattern),
+		formatTime: (pattern) => env.formatDate(now, pattern),
 		dateFormat: config.format,
 		timeFormat: DEFAULT_TIME_FORMAT,
-		title: basename,
+		title: basenameOf(notePath),
 	});
+}
+
+/** The note's filename without its folders or its `.md` extension. */
+function basenameOf(notePath: string): string {
+	return notePath.split("/").pop()?.replace(/\.md$/, "") ?? "";
 }
