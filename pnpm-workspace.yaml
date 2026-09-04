@@ -1,0 +1,47 @@
+# pnpm の設定。pnpm 10 では .npmrc ではなくこのファイルに設定を置く。
+# https://pnpm.io/settings
+#
+# このリポジトリは単一パッケージのため packages: は定義しない。
+
+# pnpm 10 は既定で依存パッケージのビルドスクリプト(postinstall 等)を実行しない。
+# 実行を許可するパッケージだけを明示する。
+onlyBuiltDependencies:
+    # lefthook はビルドスクリプトで Git hooks を導入するため必須。
+    # 許可しないと lefthook.yml があっても hook が有効にならない。
+    - lefthook
+    # esbuild は vite(rolldown-vite) が依存し、プラットフォーム別バイナリの
+    # 配置にビルドスクリプトを使う。
+    - esbuild
+
+# 公開直後のバージョンを取り込まない（単位: 分。10080 = 7日）。
+# 乗っ取られた publish は公開から短時間で発見・削除される傾向があるため、
+# 一定期間寝かせたものだけを解決対象にする。TAKUMI GUARD による検査と
+# 併用する多層防御の一段。
+# 注意: 解決時にのみ効き、lockfile 固定済みの install には影響しない。
+minimumReleaseAge: 10080
+catalog:
+    vite: npm:@voidzero-dev/vite-plus-core@0.3.0
+    vitest: 4.1.11
+    vite-plus: 0.3.0
+    "@vitest/coverage-v8": 4.1.11
+overrides:
+    vite@*: "catalog:"
+    vitest@*: "catalog:"
+peerDependencyRules:
+    allowAny:
+        - vite
+        - vitest
+    allowedVersions:
+        vite: "*"
+        vitest: "*"
+minimumReleaseAgeExclude:
+    - vite-plus
+    - "@voidzero-dev/*"
+    - oxlint
+    - "@oxlint/*"
+    - oxlint-tsgolint
+    - "@oxlint-tsgolint/*"
+    - oxfmt
+    - "@oxfmt/*"
+    - vitest
+    - "@vitest/*"

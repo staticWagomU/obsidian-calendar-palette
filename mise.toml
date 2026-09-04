@@ -1,0 +1,25 @@
+# mise: 開発ツールのバージョン管理
+# https://mise.jdx.dev/
+#
+# 使い方:
+#   mise install     # Node.js / pnpm / direnv をインストール
+#   mise run setup   # ツール導入 + direnv 許可 + 依存パッケージのインストール + Git hooks セットアップ
+#
+# 依存パッケージは TAKUMI GUARD (https://npm.flatt.tech/) 経由で取得する。
+# 事前に .env へ TAKUMI_GUARD_TOKEN を設定しておくこと（.env.example を参照）。
+
+[tools]
+# CI (.github/workflows/lint.yml) のマトリクスは 20.x / 22.x。
+# ローカルとリリースビルド (release.yml) は 22 に揃える。
+node = "22"
+pnpm = "10"
+direnv = "2.37.1"
+
+[tasks.setup]
+description = "Install tools, allow direnv, install dependencies, and set up Git hooks"
+run = [
+  "mise install",
+  "direnv allow",
+  "pnpm install",
+  "pnpm exec lefthook install",
+]
