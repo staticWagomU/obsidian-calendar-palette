@@ -17,7 +17,7 @@ pre-commit:
             run: pnpm exec vp fmt {staged_files}
         typecheck:
             glob: "*.{ts,tsx}"
-            run: pnpm exec tsc --noEmit --skipLibCheck
+            run: pnpm typecheck
 
 pre-push:
     parallel: true
@@ -29,6 +29,6 @@ pre-push:
         format-check:
             run: pnpm format:check
         typecheck:
-            run: pnpm exec tsc --noEmit --skipLibCheck
+            run: pnpm typecheck
         test:
             run: pnpm test:run
