@@ -1,90 +1,95 @@
-# Obsidian Sample Plugin
+# Calendar palette
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+An Obsidian plugin that pops a calendar over whatever you are doing. Move with the
+arrow keys, press Enter, and you are in that day's daily note.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+No sidebar view to keep open, no pane to reserve — it is a command you can trigger
+from any note and dismiss with Escape.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+## Usage
 
-## First time developing plugins?
+Run **Calendar palette: Open calendar** from the command palette (or bind it to a
+hotkey — the command ID is `calendar-palette:open-calendar`).
 
-Quick starting guide for new plugin devs:
+| Key | Action |
+| --- | --- |
+| `←` / `→` | Previous / next day |
+| `↑` / `↓` | Previous / next week |
+| `Page Up` / `Page Down` | Previous / next month |
+| `Shift` + `Page Up` / `Page Down` | Previous / next year |
+| `Home` or `T` | Jump back to today |
+| `Enter` | Open that day's daily note |
+| `Ctrl` / `Cmd` + `Enter` | Open it in a new tab |
+| `Escape` | Close |
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+Clicking a day works too. A dot under a day means a note already exists for it;
+picking a day without one asks before creating it.
 
-## Releasing new releases
+## Settings
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+| Setting | Default | Description |
+| --- | --- | --- |
+| First day of the week | Follow locale | Sunday, Monday, or whatever your Obsidian locale says |
+| Confirm before creating a note | On | Turn off to create missing daily notes without asking |
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+Everything else — the folder, the filename format, and the template — comes from
+the core **Daily notes** plugin, so there is nothing to configure twice. Slashes in
+the filename format (`YYYY/MM/YYYY-MM-DD`) are honoured, and missing folders are
+created on demand.
 
-## Adding your plugin to the community plugin list
+The template understands the same placeholders core daily notes does:
+`{{date}}`, `{{time}}`, `{{title}}`, and their `{{date:YYYY}}` formatted variants.
+Anything else is left untouched so Templater and friends can still expand it.
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+This plugin makes no network requests and reads nothing outside your vault.
 
-## How to use
+## Development
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+Node.js, pnpm, and direnv are pinned by `mise.toml`; dependencies are fetched
+through the TAKUMI Guard secure registry. See `CLAUDE.md` for the details.
 
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+```bash
+mise run setup      # install tools, allow direnv, install deps, set up Git hooks
+pnpm dev            # watch build
+pnpm validate       # lint + typecheck + test + build
 ```
 
-If you have multiple URLs, you can also do:
+To build straight into a vault while developing, create a `.env`:
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+```bash
+OBSIDIAN_PLUGIN_DIR=/path/to/YourVault/.obsidian/plugins/calendar-palette
 ```
 
-## API Documentation
+### Layout
 
-See https://docs.obsidian.md
+```
+src/
+  main.ts                    # plugin lifecycle only
+  settings.ts                # settings + settings tab
+  commands/index.ts          # command registration and wiring
+  calendar/dateMath.ts       # pure date arithmetic
+  calendar/monthGrid.ts      # pure 6x7 grid generation
+  dailyNote/coreSettings.ts  # reads the core Daily notes configuration
+  dailyNote/notePath.ts      # pure path resolution
+  dailyNote/template.ts      # pure placeholder expansion
+  dailyNote/openDailyNote.ts # find / create / open
+  ui/CalendarModal.ts        # the grid and its key bindings
+  ui/ConfirmModal.ts         # create-note confirmation
+```
+
+`calendar/` and the pure modules under `dailyNote/` never import `obsidian`, which
+is what makes them testable under the node-based test runner: `moment` is
+re-exported by `obsidian` and the bundler marks that module external.
+
+### Known unofficial API use
+
+Obsidian exposes no public API for reading another plugin's settings, but the daily
+note folder, format, and template live only in the core Daily notes plugin. Like
+Calendar and Periodic Notes, this plugin reads
+`app.internalPlugins.getPluginById("daily-notes").instance.options`. That cast is
+confined to `src/dailyNote/coreSettings.ts` and falls back to Obsidian's own
+defaults if the internals move.
+
+## License
+
+0BSD
