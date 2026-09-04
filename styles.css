@@ -293,12 +293,28 @@
 	background-color: var(--text-on-accent);
 }
 
+/* An adjacent-month day draws its number at --text-faint but its note dot
+   at --text-muted, so the dot outweighs the date it belongs to. Matching
+   the dot to the number restores the intended de-emphasis. */
+.calendar-palette.x-dimdot .calendar-palette-day.is-outside-month.has-note::after {
+	background-color: var(--text-faint);
+}
+
 .calendar-palette-hint {
 	margin-top: var(--size-4-3);
 	font-size: var(--font-ui-smaller);
 	color: var(--text-faint);
 	text-align: center;
 	line-height: var(--line-height-tight);
+}
+
+/* --text-faint is #ababab on white and #666666 on #1e1e1e, about 2.3:1 and
+   2.9:1 against the modal background — under the 4.5:1 WCAG AA threshold,
+   and the weekday headers carry real meaning (which column is which day).
+   --text-muted clears it at 6.8:1 and 8.0:1. */
+.calendar-palette.x-contrast .calendar-palette-weekdays,
+.calendar-palette.x-contrast .calendar-palette-hint {
+	color: var(--text-muted);
 }
 
 /* ---- Month paging ------------------------------------------------

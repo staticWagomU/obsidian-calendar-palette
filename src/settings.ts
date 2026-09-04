@@ -17,6 +17,8 @@ export interface CalendarPaletteSettings {
 	titleMode: TitleMode;
 	monthTransition: MonthTransition;
 	keymap: KeymapMode;
+	mutedWeekdays: boolean;
+	dimNoteDotOutsideMonth: boolean;
 }
 
 export const DEFAULT_SETTINGS: CalendarPaletteSettings = {
@@ -25,6 +27,12 @@ export const DEFAULT_SETTINGS: CalendarPaletteSettings = {
 	titleMode: "title-left",
 	monthTransition: "slide",
 	keymap: "default",
+	// Both default to on because both defaults they replace are defects, not
+	// tastes: --text-faint puts the weekday headers at about 2.3:1, under the
+	// 4.5:1 WCAG AA floor, and an adjacent-month day drawing its dot brighter
+	// than its own number inverts the emphasis the greying was for.
+	mutedWeekdays: true,
+	dimNoteDotOutsideMonth: true,
 };
 
 export class CalendarPaletteSettingTab extends PluginSettingTab {
@@ -117,6 +125,34 @@ export class CalendarPaletteSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.monthTransition)
 					.onChange(async (value) => {
 						this.plugin.settings.monthTransition = value as MonthTransition;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Higher contrast weekday headers")
+			.setDesc(
+				"Draw the weekday abbreviations and the hint line at the muted text " +
+					"colour, which clears the WCAG AA contrast threshold. Turn off for the fainter look.",
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.mutedWeekdays).onChange(async (value) => {
+					this.plugin.settings.mutedWeekdays = value;
+					await this.plugin.saveSettings();
+				}),
+			);
+
+		new Setting(containerEl)
+			.setName("Dim the note dot on adjacent-month days")
+			.setDesc(
+				"Match the dot to the greyed-out date it belongs to, so a neighbouring " +
+					"month does not draw the eye more than the month you are in.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.dimNoteDotOutsideMonth)
+					.onChange(async (value) => {
+						this.plugin.settings.dimNoteDotOutsideMonth = value;
 						await this.plugin.saveSettings();
 					}),
 			);

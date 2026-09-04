@@ -32,6 +32,8 @@ function openCalendar(plugin: CalendarPalettePlugin): void {
 		titleMode: plugin.settings.titleMode,
 		monthTransition: plugin.settings.monthTransition,
 		keymap: plugin.settings.keymap,
+		mutedWeekdays: plugin.settings.mutedWeekdays,
+		dimNoteDotOutsideMonth: plugin.settings.dimNoteDotOutsideMonth,
 		hasNote: (date) => findDailyNote(app, date, config) !== null,
 		onPick: (date, newTab) => {
 			void openDailyNote(app, date, {

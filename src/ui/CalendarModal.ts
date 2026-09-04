@@ -22,6 +22,8 @@ export interface CalendarModalOptions {
 	titleMode: TitleMode;
 	monthTransition: MonthTransition;
 	keymap: KeymapMode;
+	mutedWeekdays: boolean;
+	dimNoteDotOutsideMonth: boolean;
 	/** Whether a daily note already exists for a given day, used to mark cells. */
 	hasNote: (date: Date) => boolean;
 	/** Invoked after the modal closes, with the day the user confirmed. */
@@ -79,6 +81,8 @@ export class CalendarModal extends Modal {
 
 	private buildChrome(): void {
 		const paletteEl = this.contentEl.createDiv({ cls: "calendar-palette" });
+		paletteEl.toggleClass("x-contrast", this.options.mutedWeekdays);
+		paletteEl.toggleClass("x-dimdot", this.options.dimNoteDotOutsideMonth);
 
 		// Always built, even when the modal title carries the month: the grid
 		// names itself from this line, so it has to stay current while hidden.
