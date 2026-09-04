@@ -4,6 +4,17 @@
  * Deliberately free of any `obsidian` import: `moment` is re-exported by the
  * `obsidian` module, which the bundler marks external, so anything importing it
  * is unreachable from the node-based test runner.
+ *
+ * Why not `Temporal.PlainDate`, which is exactly what this module hand-rolls:
+ * as of Obsidian 1.13 the bundled Electron has no native `Temporal` (check with
+ * `typeof Temporal` in the developer console). Shipping `temporal-polyfill`
+ * instead would add roughly 50 kB to a 14 kB plugin that currently has no
+ * runtime dependencies at all, to replace fifty-odd fully covered lines.
+ *
+ * Worth revisiting once that check reports "object". `PlainDate.add` defaults to
+ * `overflow: "constrain"`, so it already does the month-end clamping `addMonths`
+ * below arranges by hand, and having no timezone at all would retire the
+ * local-midnight discipline this whole module exists to maintain.
  */
 
 /** Returns a copy of `date` with the time component cleared. */
