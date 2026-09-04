@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-calendar-palette",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Open a keyboard-driven calendar from anywhere in Obsidian and jump to any day's daily note.",
 	"main": "main.js",
 	"type": "module",
 	"private": true,
