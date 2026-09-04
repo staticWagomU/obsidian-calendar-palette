@@ -30,6 +30,7 @@ function openCalendar(plugin: CalendarPalettePlugin): void {
 	new CalendarModal(app, {
 		weekStart: plugin.settings.weekStart,
 		titleMode: plugin.settings.titleMode,
+		monthTransition: plugin.settings.monthTransition,
 		keymap: plugin.settings.keymap,
 		hasNote: (date) => findDailyNote(app, date, config) !== null,
 		onPick: (date, newTab) => {

@@ -38,6 +38,17 @@
 	padding-right: var(--size-4-6);
 }
 
+/* A shorter throw with a heavier fade. The full-height slide is literal
+   about direction; this one is closer to a dissolve that merely leans the
+   right way, and survives a held Page down better because there is less
+   travel to interrupt. On the modal rather than .calendar-palette so the
+   month label in .modal-title is covered as well. */
+.calendar-palette-modal.x-page-soft {
+	--cp-page-distance: 22%;
+	--cp-label-distance: 0.4em;
+	--cp-page-duration: 150ms;
+}
+
 .calendar-palette-month {
 	font-size: var(--font-ui-medium);
 	font-weight: var(--font-semibold);

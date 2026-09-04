@@ -8,10 +8,14 @@ export type WeekStart = "locale" | "sunday" | "monday";
 /** Where the month is written, and what the modal's own title says. */
 export type TitleMode = "title-left" | "title-center" | "month-only" | "calendar";
 
+/** How one month gives way to the next. */
+export type MonthTransition = "slide" | "soft" | "none";
+
 export interface CalendarPaletteSettings {
 	weekStart: WeekStart;
 	confirmBeforeCreate: boolean;
 	titleMode: TitleMode;
+	monthTransition: MonthTransition;
 	keymap: KeymapMode;
 }
 
@@ -19,6 +23,7 @@ export const DEFAULT_SETTINGS: CalendarPaletteSettings = {
 	weekStart: "locale",
 	confirmBeforeCreate: true,
 	titleMode: "title-left",
+	monthTransition: "slide",
 	keymap: "default",
 };
 
@@ -97,6 +102,21 @@ export class CalendarPaletteSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.titleMode)
 					.onChange(async (value) => {
 						this.plugin.settings.titleMode = value as TitleMode;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Month transition")
+			.setDesc("How the grid moves when you page from one month to the next.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("slide", "Slide — full height, directional")
+					.addOption("soft", "Slide — short throw, heavier fade")
+					.addOption("none", "None")
+					.setValue(this.plugin.settings.monthTransition)
+					.onChange(async (value) => {
+						this.plugin.settings.monthTransition = value as MonthTransition;
 						await this.plugin.saveSettings();
 					}),
 			);

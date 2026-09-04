@@ -8,7 +8,7 @@ import {
 	toISODate,
 } from "../calendar/dateMath";
 import { buildMonthGrid, weekdayOrder } from "../calendar/monthGrid";
-import type { TitleMode, WeekStart } from "../settings";
+import type { MonthTransition, TitleMode, WeekStart } from "../settings";
 import {
 	type CalendarAction,
 	bindingsFor,
@@ -20,6 +20,7 @@ import {
 export interface CalendarModalOptions {
 	weekStart: WeekStart;
 	titleMode: TitleMode;
+	monthTransition: MonthTransition;
 	keymap: KeymapMode;
 	/** Whether a daily note already exists for a given day, used to mark cells. */
 	hasNote: (date: Date) => boolean;
@@ -63,6 +64,7 @@ export class CalendarModal extends Modal {
 
 	override onOpen(): void {
 		this.modalEl.addClass("calendar-palette-modal");
+		this.modalEl.toggleClass("x-page-soft", this.options.monthTransition === "soft");
 		this.buildChrome();
 		this.registerKeys();
 		this.render(true);
@@ -268,9 +270,14 @@ export class CalendarModal extends Modal {
 		incoming.addClass("is-current");
 
 		// Without an animation there is no animationend, so the outgoing node
-		// would never be cleaned up — replace outright instead of sliding. A
-		// hidden host runs no animation either, so it takes the same path.
-		const animated = direction !== 0 && outgoing !== null && !host.hidden && prefersMotion();
+		// would never be cleaned up. A hidden host runs none either, which is
+		// why "none" is settled here rather than with a CSS `animation: none`.
+		const animated =
+			direction !== 0 &&
+			outgoing !== null &&
+			!host.hidden &&
+			this.options.monthTransition !== "none" &&
+			prefersMotion();
 		if (!animated) {
 			host.replaceChildren(incoming);
 			return;
