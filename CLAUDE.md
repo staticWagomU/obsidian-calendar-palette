@@ -16,7 +16,7 @@ TAKUMI Guard secure registry (`https://npm.flatt.tech/`).
 mise run setup
 ```
 
-**No token required.** `.npmrc` uses TAKUMI Guard's *anonymous mode* — setting the registry
+**No token required.** `.npmrc` uses TAKUMI Guard's _anonymous mode_ — setting the registry
 URL alone enables malicious-package blocking, so forks and fresh clones install normally.
 A personal (`tg_anon_`) or org (`tg_org_`) token only adds download tracking and breach
 notifications; if you want that, put it in your user-level `~/.npmrc`, never in this repo.
@@ -107,17 +107,17 @@ in one pass.
   Node `>=20`, matching the CI matrix. `private: true` guards against accidental npm publish —
   this plugin ships via GitHub releases, never npm.
 - `pnpm-workspace.yaml` holds pnpm settings (pnpm 10 reads settings from here, not `.npmrc`):
-  - `onlyBuiltDependencies` — pnpm 10 blocks dependency build scripts by default.
-    **lefthook must stay on this list**; its postinstall is what installs the Git hooks,
-    so removing it silently disables `lefthook.yml`.
-  - `minimumReleaseAge: 10080` — ignore package versions published within the last 7 days
-    (value is in minutes). Applies at *resolution* time only, so `--frozen-lockfile`
-    installs are unaffected. Layers with TAKUMI Guard for supply-chain defense.
-  - `minimumReleaseAgeExclude` — added by `vp migrate`. Exempts the Vite+ toolchain packages
-    from the 7-day hold, since their releases are pinned as an interlocking set.
-  - `catalog:` / `overrides` — also from `vp migrate`. `vite` and `vitest` resolve to the
-    versions Vite+ bundles, so the toolchain cannot drift out of sync. This is why those
-    entries in `package.json` read `catalog:` instead of a version range.
+    - `onlyBuiltDependencies` — pnpm 10 blocks dependency build scripts by default.
+      **lefthook must stay on this list**; its postinstall is what installs the Git hooks,
+      so removing it silently disables `lefthook.yml`.
+    - `minimumReleaseAge: 10080` — ignore package versions published within the last 7 days
+      (value is in minutes). Applies at _resolution_ time only, so `--frozen-lockfile`
+      installs are unaffected. Layers with TAKUMI Guard for supply-chain defense.
+    - `minimumReleaseAgeExclude` — added by `vp migrate`. Exempts the Vite+ toolchain packages
+      from the 7-day hold, since their releases are pinned as an interlocking set.
+    - `catalog:` / `overrides` — also from `vp migrate`. `vite` and `vitest` resolve to the
+      versions Vite+ bundles, so the toolchain cannot drift out of sync. This is why those
+      entries in `package.json` read `catalog:` instead of a version range.
 
 ## Obsidian Plugin Constraints
 
@@ -151,11 +151,11 @@ Obsidianプラグイン開発のベストプラクティスを提供するSkill�
 
 #### Skillが提供する知識
 
-| ファイル | 内容 |
-|---------|------|
-| `api-patterns.md` | Workspace、Vault、Editor、MetadataCacheのAPIパターン |
-| `ui-components.md` | SettingTab、Modal、View、CSSスタイリングのパターン |
-| `security.md` | **必須**: DOM操作のセキュリティルール（`innerHTML`禁止等） |
+| ファイル           | 内容                                                       |
+| ------------------ | ---------------------------------------------------------- |
+| `api-patterns.md`  | Workspace、Vault、Editor、MetadataCacheのAPIパターン       |
+| `ui-components.md` | SettingTab、Modal、View、CSSスタイリングのパターン         |
+| `security.md`      | **必須**: DOM操作のセキュリティルール（`innerHTML`禁止等） |
 
 #### 重要なルール
 

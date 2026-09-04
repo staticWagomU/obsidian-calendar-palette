@@ -17,9 +17,4 @@ direnv = "2.37.1"
 
 [tasks.setup]
 description = "Install tools, allow direnv, install dependencies, and set up Git hooks"
-run = [
-  "mise install",
-  "direnv allow",
-  "pnpm install",
-  "pnpm exec lefthook install",
-]
+run = ["mise install", "direnv allow", "pnpm install", "pnpm exec lefthook install"]

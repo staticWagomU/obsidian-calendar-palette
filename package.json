@@ -1,14 +1,12 @@
 {
 	"name": "obsidian-calendar-palette",
 	"version": "1.0.0",
-	"description": "Open a keyboard-driven calendar from anywhere in Obsidian and jump to any day's daily note.",
-	"main": "main.js",
-	"type": "module",
 	"private": true,
-	"packageManager": "pnpm@10.26.0",
-	"engines": {
-		"node": ">=20"
-	},
+	"description": "Open a keyboard-driven calendar from anywhere in Obsidian and jump to any day's daily note.",
+	"keywords": [],
+	"license": "0-BSD",
+	"type": "module",
+	"main": "main.js",
 	"scripts": {
 		"dev": "vp build --watch --mode development",
 		"build": "tsc -noEmit -skipLibCheck && vp build --mode production",
@@ -27,8 +25,9 @@
 		"setup:dev": "bash scripts/setup-dev.sh",
 		"clean": "rm -f main.js main.js.map"
 	},
-	"keywords": [],
-	"license": "0-BSD",
+	"dependencies": {
+		"obsidian": "latest"
+	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",
 		"@types/node": "^26.4.0",
@@ -45,7 +44,8 @@
 		"vite-plus": "catalog:",
 		"vitest": "catalog:"
 	},
-	"dependencies": {
-		"obsidian": "latest"
-	}
+	"engines": {
+		"node": ">=20"
+	},
+	"packageManager": "pnpm@10.26.0"
 }

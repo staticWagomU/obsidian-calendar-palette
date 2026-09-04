@@ -4,31 +4,31 @@
 # Oxlint/oxfmt は Vite+ が提供する。`oxlint`/`oxfmt` の bin は Vite+ が
 # 案内シム(exit 1)に置き換えているため、必ず `vp lint` / `vp fmt` で呼ぶこと。
 pre-commit:
-  parallel: true
-  commands:
-    oxlint:
-      glob: "*.{ts,tsx,js,jsx}"
-      run: pnpm exec vp lint {staged_files}
-    eslint:
-      glob: "*.{ts,tsx,js,jsx}"
-      run: pnpm exec eslint {staged_files}
-    format-check:
-      glob: "*.{ts,tsx,js,jsx}"
-      run: pnpm exec vp fmt {staged_files}
-    typecheck:
-      glob: "*.{ts,tsx}"
-      run: pnpm exec tsc --noEmit --skipLibCheck
+    parallel: true
+    commands:
+        oxlint:
+            glob: "*.{ts,tsx,js,jsx}"
+            run: pnpm exec vp lint {staged_files}
+        eslint:
+            glob: "*.{ts,tsx,js,jsx}"
+            run: pnpm exec eslint {staged_files}
+        format-check:
+            glob: "*.{ts,tsx,js,jsx}"
+            run: pnpm exec vp fmt {staged_files}
+        typecheck:
+            glob: "*.{ts,tsx}"
+            run: pnpm exec tsc --noEmit --skipLibCheck
 
 pre-push:
-  parallel: true
-  commands:
-    oxlint:
-      run: pnpm lint:oxlint
-    eslint:
-      run: pnpm lint:eslint
-    format-check:
-      run: pnpm format:check
-    typecheck:
-      run: pnpm exec tsc --noEmit --skipLibCheck
-    test:
-      run: pnpm test:run
+    parallel: true
+    commands:
+        oxlint:
+            run: pnpm lint:oxlint
+        eslint:
+            run: pnpm lint:eslint
+        format-check:
+            run: pnpm format:check
+        typecheck:
+            run: pnpm exec tsc --noEmit --skipLibCheck
+        test:
+            run: pnpm test:run

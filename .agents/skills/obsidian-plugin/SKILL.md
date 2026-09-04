@@ -18,6 +18,7 @@ Develop Obsidian plugins following official best practices for security, API usa
 ## When to Use
 
 Apply this skill when:
+
 - Creating new Obsidian plugins
 - Adding commands, settings, or views
 - Handling file/folder operations
@@ -66,13 +67,13 @@ this.app.vault.on('create', this.handler);
 
 ## Terminology (for Documentation)
 
-| Use | Avoid |
-|-----|-------|
-| keyboard shortcut | hotkey |
-| note | file (for .md) |
-| folder | directory |
-| select | click/tap |
-| perform | invoke |
+| Use               | Avoid          |
+| ----------------- | -------------- |
+| keyboard shortcut | hotkey         |
+| note              | file (for .md) |
+| folder            | directory      |
+| select            | click/tap      |
+| perform           | invoke         |
 
 Use sentence case for headings. Bold button text in docs.
 

@@ -11,26 +11,26 @@ from any note and dismiss with Escape.
 Run **Calendar palette: Open calendar** from the command palette (or bind it to a
 hotkey — the command ID is `calendar-palette:open-calendar`).
 
-| Key | Action |
-| --- | --- |
-| `←` / `→` | Previous / next day |
-| `↑` / `↓` | Previous / next week |
-| `Page Up` / `Page Down` | Previous / next month |
-| `Shift` + `Page Up` / `Page Down` | Previous / next year |
-| `Home` or `T` | Jump back to today |
-| `Enter` | Open that day's daily note |
-| `Ctrl` / `Cmd` + `Enter` | Open it in a new tab |
-| `Escape` | Close |
+| Key                               | Action                     |
+| --------------------------------- | -------------------------- |
+| `←` / `→`                         | Previous / next day        |
+| `↑` / `↓`                         | Previous / next week       |
+| `Page Up` / `Page Down`           | Previous / next month      |
+| `Shift` + `Page Up` / `Page Down` | Previous / next year       |
+| `Home` or `T`                     | Jump back to today         |
+| `Enter`                           | Open that day's daily note |
+| `Ctrl` / `Cmd` + `Enter`          | Open it in a new tab       |
+| `Escape`                          | Close                      |
 
 Clicking a day works too. A dot under a day means a note already exists for it;
 picking a day without one asks before creating it.
 
 ## Settings
 
-| Setting | Default | Description |
-| --- | --- | --- |
-| First day of the week | Follow locale | Sunday, Monday, or whatever your Obsidian locale says |
-| Confirm before creating a note | On | Turn off to create missing daily notes without asking |
+| Setting                        | Default       | Description                                           |
+| ------------------------------ | ------------- | ----------------------------------------------------- |
+| First day of the week          | Follow locale | Sunday, Monday, or whatever your Obsidian locale says |
+| Confirm before creating a note | On            | Turn off to create missing daily notes without asking |
 
 Everything else — the folder, the filename format, and the template — comes from
 the core **Daily notes** plugin, so there is nothing to configure twice. Slashes in

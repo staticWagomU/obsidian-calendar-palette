@@ -8,13 +8,10 @@ export default defineConfig(
 		languageOptions: {
 			parserOptions: {
 				projectService: {
-					allowDefaultProject: [
-						'eslint.config.mts',
-						'manifest.json'
-					]
+					allowDefaultProject: ["eslint.config.mts", "manifest.json"],
 				},
 				tsconfigRootDir: import.meta.dirname,
-				extraFileExtensions: ['.json']
+				extraFileExtensions: [".json"],
 			},
 		},
 	},

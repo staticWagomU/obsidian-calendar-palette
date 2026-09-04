@@ -16,15 +16,7 @@
 		"strictBindCallApply": true,
 		"allowSyntheticDefaultImports": true,
 		"useUnknownInCatchVariables": true,
-		"lib": [
-			"DOM",
-			"ES5",
-			"ES6",
-			"ES7"
-		]
+		"lib": ["DOM", "ES5", "ES6", "ES7"]
 	},
-	"include": [
-		"src/**/*.ts",
-		"vite.config.ts"
-	]
+	"include": ["src/**/*.ts", "vite.config.ts"]
 }

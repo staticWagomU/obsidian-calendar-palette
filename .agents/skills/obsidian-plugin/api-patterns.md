@@ -10,12 +10,12 @@ const leaf = this.app.workspace.activeLeaf;
 const view = leaf?.view;
 
 // ✅ CURRENT - Type-safe view access
-import { MarkdownView } from 'obsidian';
+import { MarkdownView } from "obsidian";
 
 const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 if (view) {
-    const file = view.file;
-    const editor = view.editor;
+	const file = view.file;
+	const editor = view.editor;
 }
 ```
 
@@ -25,8 +25,8 @@ if (view) {
 // ✅ Direct editor access (best for commands)
 const editor = this.app.workspace.activeEditor?.editor;
 if (editor) {
-    const selection = editor.getSelection();
-    editor.replaceSelection(newText);
+	const selection = editor.getSelection();
+	editor.replaceSelection(newText);
 }
 ```
 
@@ -35,9 +35,9 @@ if (editor) {
 ```typescript
 // Iterate all markdown views
 this.app.workspace.iterateAllLeaves((leaf) => {
-    if (leaf.view instanceof MarkdownView) {
-        // Process view
-    }
+	if (leaf.view instanceof MarkdownView) {
+		// Process view
+	}
 });
 ```
 
@@ -48,12 +48,12 @@ this.app.workspace.iterateAllLeaves((leaf) => {
 ```typescript
 // ❌ BAD - Iterating all files
 const files = this.app.vault.getAllLoadedFiles();
-const target = files.find(f => f.path === 'some/path.md');
+const target = files.find((f) => f.path === "some/path.md");
 
 // ✅ GOOD - Direct lookup
-const file = this.app.vault.getFileByPath('some/path.md');
+const file = this.app.vault.getFileByPath("some/path.md");
 if (file instanceof TFile) {
-    // Use file
+	// Use file
 }
 ```
 
@@ -65,24 +65,21 @@ const content = await this.app.vault.read(file);
 const cached = await this.app.vault.cachedRead(file); // Faster, may be stale
 
 // Creating
-const newFile = await this.app.vault.create(
-    normalizePath('folder/new-note.md'),
-    'Initial content'
-);
+const newFile = await this.app.vault.create(normalizePath("folder/new-note.md"), "Initial content");
 
 // Modifying - Use process() for background edits
 await this.app.vault.process(file, (content) => {
-    return content.replace('old', 'new');
+	return content.replace("old", "new");
 });
 ```
 
 ### When to Use Each API
 
-| Task | API | Why |
-|------|-----|-----|
-| Active note editing | `Editor` | Real-time updates, undo support |
-| Background processing | `Vault.process()` | No view needed, atomic |
-| Frontmatter changes | `FileManager.processFrontMatter()` | Handles YAML safely |
+| Task                  | API                                | Why                             |
+| --------------------- | ---------------------------------- | ------------------------------- |
+| Active note editing   | `Editor`                           | Real-time updates, undo support |
+| Background processing | `Vault.process()`                  | No view needed, atomic          |
+| Frontmatter changes   | `FileManager.processFrontMatter()` | Handles YAML safely             |
 
 ## Frontmatter Editing
 
@@ -94,9 +91,9 @@ const yaml = parseYaml(content);
 
 // ✅ GOOD - Use FileManager
 await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-    frontmatter.tags = frontmatter.tags || [];
-    frontmatter.tags.push('new-tag');
-    frontmatter.modified = new Date().toISOString();
+	frontmatter.tags = frontmatter.tags || [];
+	frontmatter.tags.push("new-tag");
+	frontmatter.modified = new Date().toISOString();
 });
 ```
 
@@ -107,7 +104,7 @@ await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
 const selection = editor.getSelection();
 
 // Replace selection
-editor.replaceSelection('new text');
+editor.replaceSelection("new text");
 
 // Get/set cursor
 const cursor = editor.getCursor();
@@ -117,7 +114,7 @@ editor.setCursor({ line: 0, ch: 0 });
 const line = editor.getLine(cursor.line);
 
 // Insert at position
-editor.replaceRange('inserted', { line: 5, ch: 0 });
+editor.replaceRange("inserted", { line: 5, ch: 0 });
 
 // Get entire document
 const doc = editor.getValue();
@@ -180,24 +177,24 @@ For fast access to parsed note data:
 // Get cached metadata (frontmatter, links, etc.)
 const cache = this.app.metadataCache.getFileCache(file);
 if (cache) {
-    const tags = cache.tags?.map(t => t.tag);
-    const links = cache.links?.map(l => l.link);
-    const frontmatter = cache.frontmatter;
-    const headings = cache.headings;
+	const tags = cache.tags?.map((t) => t.tag);
+	const links = cache.links?.map((l) => l.link);
+	const frontmatter = cache.frontmatter;
+	const headings = cache.headings;
 }
 
 // Wait for cache to be ready
 this.registerEvent(
-    this.app.metadataCache.on('resolved', () => {
-        // All files indexed
-    })
+	this.app.metadataCache.on("resolved", () => {
+		// All files indexed
+	}),
 );
 
 // React to metadata changes
 this.registerEvent(
-    this.app.metadataCache.on('changed', (file, data, cache) => {
-        // File metadata updated
-    })
+	this.app.metadataCache.on("changed", (file, data, cache) => {
+		// File metadata updated
+	}),
 );
 ```
 
@@ -205,27 +202,27 @@ this.registerEvent(
 
 ```typescript
 this.addCommand({
-    id: 'unique-command-id',
-    name: 'Human readable name',
-    // Simple callback
-    callback: () => {
-        this.doSomething();
-    },
-    // Or with editor context
-    editorCallback: (editor, view) => {
-        const selection = editor.getSelection();
-        editor.replaceSelection(transform(selection));
-    },
-    // Optional: keyboard shortcut
-    hotkeys: [{ modifiers: ['Mod'], key: 'j' }]
+	id: "unique-command-id",
+	name: "Human readable name",
+	// Simple callback
+	callback: () => {
+		this.doSomething();
+	},
+	// Or with editor context
+	editorCallback: (editor, view) => {
+		const selection = editor.getSelection();
+		editor.replaceSelection(transform(selection));
+	},
+	// Optional: keyboard shortcut
+	hotkeys: [{ modifiers: ["Mod"], key: "j" }],
 });
 ```
 
 ## Ribbon Icon
 
 ```typescript
-this.addRibbonIcon('dice', 'My Plugin', (evt) => {
-    // Handle click
-    new Notice('Clicked!');
+this.addRibbonIcon("dice", "My Plugin", (evt) => {
+	// Handle click
+	new Notice("Clicked!");
 });
 ```
