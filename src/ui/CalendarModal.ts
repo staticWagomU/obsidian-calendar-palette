@@ -1,4 +1,4 @@
-import { App, Modal, moment, type Modifier } from "obsidian";
+import { App, Modal, Platform, moment } from "obsidian";
 import {
 	addDays,
 	addMonths,
@@ -9,17 +9,22 @@ import {
 } from "../calendar/dateMath";
 import { buildMonthGrid, weekdayOrder } from "../calendar/monthGrid";
 import type { WeekStart } from "../settings";
+import {
+	type CalendarAction,
+	bindingsFor,
+	hintFor,
+	type KeymapMode,
+	resolveAction,
+} from "./keymap";
 
 export interface CalendarModalOptions {
 	weekStart: WeekStart;
+	keymap: KeymapMode;
 	/** Whether a daily note already exists for a given day, used to mark cells. */
 	hasNote: (date: Date) => boolean;
 	/** Invoked after the modal closes, with the day the user confirmed. */
 	onPick: (date: Date, newTab: boolean) => void;
 }
-
-const KEY_HINT =
-	"Arrows move · Page up/down changes month · T jumps to today · Enter opens · Mod+Enter opens in a new tab";
 
 /** Months on one continuous axis, so the sign of a difference is a direction. */
 function monthNumber(date: Date): number {
@@ -30,7 +35,7 @@ function monthNumber(date: Date): number {
  * A month grid driven entirely from the keyboard.
  *
  * `Modal` owns a `Scope` that Obsidian pushes onto the keymap stack on open and
- * pops on close, so the arrow keys registered here never leak into the editor
+ * pops on close, so the keys registered here never leak into the editor
  * underneath and no manual teardown is needed.
  */
 export class CalendarModal extends Modal {
@@ -101,44 +106,38 @@ export class CalendarModal extends Modal {
 			attr: { role: "presentation" },
 		});
 
-		paletteEl.createDiv({ cls: "calendar-palette-hint", text: KEY_HINT });
+		paletteEl.createDiv({
+			cls: "calendar-palette-hint",
+			text: hintFor(this.options.keymap),
+		});
 	}
 
+	/**
+	 * One catch-all handler rather than a `scope.register` per binding, because
+	 * the emacs mode needs `KeyboardEvent.code`: macOS composes Option+V into
+	 * "√", and `Scope` only ever matches on `key`. Anything unrecognised falls
+	 * through untouched, so Escape still closes the modal.
+	 */
 	private registerKeys(): void {
-		const move = (step: (date: Date) => Date) => (evt: KeyboardEvent) => {
+		const bindings = bindingsFor(this.options.keymap);
+		this.scope.register(null, null, (evt) => {
+			const action = resolveAction(bindings, evt, Platform.isMacOS);
+			if (action === null) return;
 			evt.preventDefault();
-			this.setFocus(step(this.focused));
+			this.run(action);
 			return false;
-		};
+		});
+	}
 
-		const movements: [Modifier[], string, (date: Date) => Date][] = [
-			[[], "ArrowLeft", (date) => addDays(date, -1)],
-			[[], "ArrowRight", (date) => addDays(date, 1)],
-			[[], "ArrowUp", (date) => addDays(date, -7)],
-			[[], "ArrowDown", (date) => addDays(date, 7)],
-			[[], "PageUp", (date) => addMonths(date, -1)],
-			[[], "PageDown", (date) => addMonths(date, 1)],
-			[["Shift"], "PageUp", (date) => addYears(date, -1)],
-			[["Shift"], "PageDown", (date) => addYears(date, 1)],
-			[[], "Home", () => this.today],
-			// Most Mac keyboards have no Home key, so offer a letter alias. The
-			// modal has no text input, so a bare letter cannot swallow typing.
-			[[], "t", () => this.today],
-		];
-		for (const [modifiers, key, step] of movements) {
-			this.scope.register(modifiers, key, move(step));
+	private run(action: CalendarAction): void {
+		switch (action) {
+			case "open":
+				return this.pick(false);
+			case "open-in-new-tab":
+				return this.pick(true);
+			default:
+				return this.setFocus(step(action, this.focused, this.today));
 		}
-
-		this.scope.register([], "Enter", (evt) => {
-			evt.preventDefault();
-			this.pick(false);
-			return false;
-		});
-		this.scope.register(["Mod"], "Enter", (evt) => {
-			evt.preventDefault();
-			this.pick(true);
-			return false;
-		});
 	}
 
 	private setFocus(date: Date): void {
@@ -308,6 +307,30 @@ export class CalendarModal extends Modal {
 		// of the calendar, and so the opened note gets the focus.
 		this.close();
 		this.options.onPick(date, newTab);
+	}
+}
+
+/** Where a movement action lands, given where the focus is now. */
+function step(action: CalendarAction, from: Date, today: Date): Date {
+	switch (action) {
+		case "prev-day":
+			return addDays(from, -1);
+		case "next-day":
+			return addDays(from, 1);
+		case "prev-week":
+			return addDays(from, -7);
+		case "next-week":
+			return addDays(from, 7);
+		case "prev-month":
+			return addMonths(from, -1);
+		case "next-month":
+			return addMonths(from, 1);
+		case "prev-year":
+			return addYears(from, -1);
+		case "next-year":
+			return addYears(from, 1);
+		default:
+			return today;
 	}
 }
 
