@@ -24,8 +24,4 @@ export default class CalendarPalettePlugin extends Plugin {
 			(await this.loadData()) as Partial<CalendarPaletteSettings>,
 		);
 	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
 }
