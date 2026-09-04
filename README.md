@@ -6,6 +6,9 @@ arrow keys, press Enter, and you are in that day's daily note.
 No sidebar view to keep open, no pane to reserve — it is a command you can trigger
 from any note and dismiss with Escape.
 
+Requires Obsidian 1.13.0 or later, which is where the settings tab's declarative
+API — and with it the settings search — arrived.
+
 ## Usage
 
 Run **Calendar palette: Open calendar** from the command palette (or bind it to a
