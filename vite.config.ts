@@ -72,10 +72,11 @@ export default defineConfig(({ mode }) => {
 				// 型情報を要するルール(no-floating-promises 等)を有効にする。
 				// 実体は Vite+ 同梱の oxlint-tsgolint、つまり TypeScript 7 の
 				// ネイティブ実装で、devDependencies の typescript とは独立に動く。
-				// 対になる typeCheck は入れない: tsgo は esModuleInterop が常時 ON
-				// で、obsidian.d.ts の `moment` が呼び出せず TS2349 になるため。
-				// 詳細は CLAUDE.md の TypeScript 7 の項を参照。
 				typeAware: true,
+				// tsgo 自身の型診断も出す。tsc(5.9) と TypeScript 7 の両方の目で
+				// 見ることになるので、7 系で初めて壊れる書き方がここで止まる。
+				// 詳細は CLAUDE.md の TypeScript 7 の項を参照。
+				typeCheck: true,
 			},
 			// plugins は既定を置き換えてしまうので指定しない。
 			// 既定の unicorn / typescript / oxc をそのまま使う。

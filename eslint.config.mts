@@ -8,7 +8,9 @@ export default defineConfig(
 		languageOptions: {
 			parserOptions: {
 				projectService: {
-					allowDefaultProject: ["eslint.config.mts", "manifest.json"],
+					// このファイル自身は tsconfig.json の include に入っているので
+					// ここには挙げない。両方に載ると projectService が衝突する。
+					allowDefaultProject: ["manifest.json"],
 				},
 				tsconfigRootDir: import.meta.dirname,
 				extraFileExtensions: [".json"],
