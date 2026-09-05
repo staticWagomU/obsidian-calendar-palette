@@ -17,9 +17,9 @@ jobs:
             # 匿名モード（bot-id なし）: 悪意あるパッケージのブロックのみ有効
             - uses: flatt-security/setup-takumi-guard-npm@v1
 
+            # バージョンは package.json の packageManager から読ませる。
+            # with: version を併記すると二重指定でエラーになる。
             - uses: pnpm/action-setup@v4
-              with:
-                  version: 10
 
             - uses: actions/setup-node@v6
               with:
