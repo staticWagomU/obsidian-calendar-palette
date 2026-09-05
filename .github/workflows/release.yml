@@ -19,7 +19,7 @@ jobs:
 
             # バージョンは package.json の packageManager から読ませる。
             # with: version を併記すると二重指定でエラーになる。
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
 
             - uses: actions/setup-node@v6
               with:
